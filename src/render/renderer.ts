@@ -1,6 +1,7 @@
+import { HANDLING } from '../game/config';
 import { positiveModulo, segmentAt } from '../game/track';
 import type { Track, VehicleState } from '../game/types';
-import { drawPlayer, drawScenery } from './art';
+import { drawLandmark, drawObstacle, drawPlayer, drawScenery } from './art';
 import { project, VIEW } from './projection';
 import type { ProjectedPoint } from './projection';
 
@@ -37,9 +38,10 @@ export function render(context: CanvasRenderingContext2D, track: Track, player: 
   context.fillRect(0, VIEW.horizonY, VIEW.width, VIEW.height - VIEW.horizonY);
 
   const strips: Strip[] = [];
-  const firstIndex = Math.floor(player.stationMeters / track.segmentLengthMeters);
-  const segmentFraction = positiveModulo(player.stationMeters, track.segmentLengthMeters) / track.segmentLengthMeters;
-  const localCurvature = segmentAt(track, player.stationMeters).curvaturePerMeter;
+  const cameraStationMeters = player.stationMeters - VIEW.chaseDistanceMeters;
+  const firstIndex = Math.floor(cameraStationMeters / track.segmentLengthMeters);
+  const segmentFraction = positiveModulo(cameraStationMeters, track.segmentLengthMeters) / track.segmentLengthMeters;
+  const localCurvature = segmentAt(track, cameraStationMeters).curvaturePerMeter;
   // Integrate from a segment boundary behind the near plane. Fractional initialization
   // keeps road curvature continuous when the camera crosses each segment boundary.
   let heading = -localCurvature * segmentFraction * track.segmentLengthMeters;
@@ -67,7 +69,29 @@ export function render(context: CanvasRenderingContext2D, track: Track, player: 
     context.fillRect(0, far.y, VIEW.width, near.y - far.y + 1);
     quad(context, near, far, track.roadHalfWidthMeters + 0.7, alternate ? '#f3e9cf' : '#d55b49');
     quad(context, near, far, track.roadHalfWidthMeters, alternate ? '#52616a' : '#4e5c65');
-    if (alternate) {
+    // A narrow two-row checkered stripe straddles the circuit seam.
+    const stripPoint = (fraction: number): ProjectedPoint => ({
+      x: near.x + (far.x - near.x) * fraction,
+      y: near.y + (far.y - near.y) * fraction,
+      scale: near.scale + (far.scale - near.scale) * fraction,
+    });
+    if (wrappedIndex < 2) {
+      const cellWidth = track.roadHalfWidthMeters * 2 / 16;
+      for (let cell = 0; cell < 16; cell++) {
+        const lateral = -track.roadHalfWidthMeters + (cell + 0.5) * cellWidth;
+        const stripeNear = wrappedIndex === 0 ? stripPoint(0.85) : near;
+        const stripeFar = wrappedIndex === 0 ? far : stripPoint(0.15);
+        quad(context, { ...stripeNear, x: stripeNear.x + lateral * stripeNear.scale },
+          { ...stripeFar, x: stripeFar.x + lateral * stripeFar.scale }, cellWidth / 2,
+          (cell + wrappedIndex) % 2 ? '#182e38' : '#fff0cc');
+      }
+    }
+    for (const side of [-1, 1]) {
+      const boundary = side * (track.roadHalfWidthMeters + HANDLING.barrierOffsetMeters);
+      quad(context, { ...near, x: near.x + boundary * near.scale },
+        { ...far, x: far.x + boundary * far.scale }, 0.18, alternate ? '#d7c9ad' : '#344c55');
+    }
+    if (alternate && wrappedIndex >= 2) {
       for (const lane of [-1, 1]) {
         quad(context,
           { ...near, x: near.x + lane * track.roadHalfWidthMeters / 3 * near.scale },
@@ -75,9 +99,19 @@ export function render(context: CanvasRenderingContext2D, track: Track, player: 
           0.055, '#eee8cc');
       }
     }
+    for (const landmark of track.landmarks) {
+      if (Math.floor(landmark.stationMeters / track.segmentLengthMeters) === wrappedIndex) {
+        drawLandmark(context, far.x + landmark.lateralMeters * far.scale, far.y, far.scale, landmark);
+      }
+    }
+    for (const obstacle of track.obstacles) {
+      if (Math.floor(obstacle.stationMeters / track.segmentLengthMeters) === wrappedIndex) {
+        drawObstacle(context, far.x + obstacle.lateralMeters * far.scale, far.y, far.scale, obstacle.halfWidthMeters);
+      }
+    }
     if (wrappedIndex % 12 === 0) {
       const side = Math.floor(wrappedIndex / 12) % 2 === 0 ? -1 : 1;
-      drawScenery(context, far.x + side * (track.roadHalfWidthMeters + 3) * far.scale, far.y, far.scale, wrappedIndex / 12);
+      drawScenery(context, far.x + side * (track.roadHalfWidthMeters + 8) * far.scale, far.y, far.scale, wrappedIndex / 12);
     }
   }
   drawPlayer(context, steer);

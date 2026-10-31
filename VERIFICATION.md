@@ -1,5 +1,54 @@
 # Verification evidence
 
+## M2 — 2026-10-31
+
+**Status: complete.** M1 prerequisite evidence was read before implementation. Only M2 was implemented; M3–M7 remain pending. Workspace was clean at start; no version-control mutations were made and `SPEC.md`, dependencies and lockfile are unchanged.
+
+Environment: macOS ARM64, Node **24.18.0**, npm **11.16.0**, existing Playwright **1.64.1** browsers. Native manual review used Google Chrome at ordinary desktop size on **http://127.0.0.1:5173**. Browser checks include the existing **960×720** resize. No browser downloads or installs were required in this session. Commands needing writes/server/browser access used permitted elevated execution.
+
+| Exact command | Result |
+| --- | --- |
+| `npm run dev` | Passed; served the documented local origin for browser and native driving review. Stopped before preview. |
+| `npm test -- --reporter=verbose tests/unit/handling.test.ts tests/unit/collisions.test.ts` | **19/19 passed** after tuning and the obstacle/barrier pinch fix; prints the corner comparison below. |
+| `npm run typecheck` | Passed after fixing the new browser test's tuple typing. |
+| `npm run lint` | Passed. |
+| `npm test` | **42/42 passed**, 7 files; final run 172 ms. Includes exact 1200-tick equality at 30/60/120/144 Hz using final circuit/handling/contacts. |
+| `npm run build` | Passed; 18 modules, HTML **2.79 kB**, CSS **3.71 kB**, JS **14.46 kB** (gzip 1.20 / 1.51 / 5.08 kB). |
+| `npm run test:e2e` (development) | **5/5 Chromium passed**, 5.6 s. All prior input/pause/focus/stall/resize checks plus both-verge slowdown and rejoin. |
+| `npm run test:e2e:compat` | **3/3 passed**, Chromium/Firefox/WebKit designated smoke: 4.1 s on dev, then 3.9 s on final preview. Full compatibility acceptance remains M7. |
+| `npm run preview` | Passed on the same local origin with final `dist`. |
+| `npm run test:e2e` (preview already running) | **5/5 Chromium passed**, 5.6 s. Runtime audit found no external HTTP requests, console errors or uncaught errors. |
+| `git diff --check` | Passed after code and documentation changes. Git used only for inspection. |
+
+Logic evidence covers five eased bends/both directions, multiple ≥200 m passing straights, a straight seam, explicit immutable track objects, speed-squared outward load, both-verge drag/grip/rejoin, bounded sustained barrier contact, swept obstacle/car contacts, initial overlap, simultaneous two-axis sweep, nearest seam distance on multiple unwrapped laps, maximum-speed hits, and continued recovery without longitudinal correction. Pair contacts remain a generic fixture for M3 rather than integrated opponents.
+
+### Braking comparison and fixes
+
+The same test steering policy drives both **650–1000 m** scenarios, starting at **84 m/s** centered. The braked run brakes from 720 m to about 49 m/s, holds near 48–49 m/s until 880 m, then accelerates. Only ordinary inputs enter the production motion/contact functions; no driving assist or test hook is shipped.
+
+| Measurement | Full throttle | Braked |
+| --- | --- | --- |
+| Section ticks / seconds | 349 / 5.817 | 340 / 5.667 |
+| Off-road ticks | 104 | 0 |
+| Barrier impacts | 1 | 0 |
+| Maximum absolute lateral position | 10.600 m | 0.0091 m (rounded up) |
+| Exit speed | 62.417 m/s (224.7 km/h) | 81.633 m/s (293.9 km/h) |
+
+Initial tuning did cause outward drift, but full throttle was faster; that comparison failed and was resolved by tightening Anchor to peak curvature **−0.0095/m** and increasing off-road speed drag to **0.7/s**. The final model retains physical corner load rather than a curve speed cap. Code review also caught the shoulder obstacle/barrier pinch; its regression verifies separation toward the open side. The first Chromium run failed because the old blue-gray pixel heuristic included the new barriers; the test now identifies the two actual asphalt colors. A TypeScript check caught a non-const key tuple in the added browser test; fixed and rerun. No unresolved failing checks remain. Playwright's existing NO_COLOR/FORCE_COLOR warnings are benign.
+
+### Manual driving and visual acceptance
+
+Native Chrome used the real local server with ordinary keyboard input, stopping/pausing between inspected sections:
+
+- Drove Lighthouse right, Anchor left hairpin, Breakwater right, Pines left and Home right; observed location signs, Marina/Harbor stands, moving curbs/trees, yellow/black shoulder stacks, and wide straights. Crossed the **2000 m** seam to **2011 m**, then continued to **2284 m** without loading or a visible road/scenery jump. Surface/verge contrast and chase perspective remain clear.
+- Throttle builds speed, braking promptly reduces it to zero, and leaving the surface produces a strong readable slowdown. The tight hairpin pushes outward at speed; braking reduces that load. Deliberately left/rejoined both verges; recovered from rest/low speed with throttle and inward steering. Steering remains usable, and recovery does not snap to the center.
+- On the second traversal, approached the left shoulder tire stack at **2172 m / 60 km/h**; after crossing it, the car was separated inward at **2185 m / 45 km/h**. Steered back and continued to **2284 m / 209 km/h** without reset. The tire contact is noticeable and does not trap the car.
+- A separate fast opening-straight approach deliberately steered into the right outer boundary; the car stopped moving outward alongside the drawn barrier at **377 m / 77 km/h**. Inward steering/throttle recovered to **482 m / 152 km/h**. Off-road and barrier losses are bounded and recoverable; the pure tests additionally isolate sustained contact and both signs.
+- P/Enter pause/resume preserved the drive during review. Existing real-browser regressions cover all aliases with simultaneous throttle, held-key focus cleanup, exceptional stalls and resize. Native multi-key holding remains limited; browser integration and deterministic scenarios supply precise combined-input/comparison evidence.
+- Visual review shortened an initially overlong checkered stripe and moved decorative signs/stands beyond the barrier; final periodic rendering tests and production build were rerun. Native static-preview review confirmed the shortened stripe and decoration placement. All art is original procedural code; no asset/network dependency was added.
+
+No M2 blocker remains. This is incremental driving/contact acceptance, not a complete-race or measured-performance claim. M1's prior development-only minimatch advisory remains recorded below; audit was not rerun and dependencies were unchanged. Next authorized session selects **M3**: integrate exactly three opponents and pair contacts, then verify passing and long-run traffic. Stop at M2; no commits/staging/push occurred.
+
 ## M1 closeout — 2026-10-31
 
 **Status: complete.** All M1 acceptance criteria have executed evidence. M2–M7 remain pending; no later milestone was started. `SPEC.md` and production gameplay code were unchanged during closeout.

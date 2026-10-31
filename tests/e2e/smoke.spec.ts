@@ -91,7 +91,10 @@ test('every driving alias steers the road while accelerating, coasts and brakes'
       const red = pixels[x * 4]!;
       const green = pixels[x * 4 + 1]!;
       const blue = pixels[x * 4 + 2]!;
-      if (blue > green && green > red) roadPixels.push(x);
+      // M2 barriers and grandstands also use blue-gray. Identify the actual
+      // two asphalt colors so their clipped silhouettes cannot bias the sample.
+      if ((red === 82 && green === 97 && blue === 106) ||
+          (red === 78 && green === 92 && blue === 101)) roadPixels.push(x);
     }
     if (roadPixels.length < 100) throw new Error('Expected visible road surface');
     return (roadPixels[0]! + roadPixels[roadPixels.length - 1]!) / 2;
@@ -118,5 +121,36 @@ test('every driving alias steers the road while accelerating, coasts and brakes'
     await page.clock.runFor(1000);
     await page.keyboard.up('ArrowUp');
     expect(await speed()).toBeGreaterThan(50);
+  }
+});
+
+
+test('both verges slow the car and steering permits a return to asphalt', async ({ page }) => {
+  await page.clock.install();
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await page.clock.runFor(100);
+  const speed = async (): Promise<number> => Number(await page.locator('#speed').textContent());
+  for (const [outward, inward] of [['d', 'a'], ['a', 'd']] as const) {
+    await page.keyboard.down('w');
+    await page.clock.runFor(2000);
+    const approachSpeed = await speed();
+    await page.keyboard.down(outward);
+    await page.clock.runFor(3000);
+    await page.keyboard.up(outward);
+    const vergeSpeed = await speed();
+    expect(vergeSpeed).toBeLessThan(approachSpeed - 20);
+    const distance = Number(await page.locator('#distance').textContent());
+    await page.keyboard.down(inward);
+    await page.clock.runFor(2200);
+    await page.keyboard.up(inward);
+    await page.clock.runFor(500);
+    expect(await speed()).toBeGreaterThan(vergeSpeed + 15);
+    expect(Number(await page.locator('#distance').textContent())).toBeGreaterThan(distance);
+    await page.keyboard.up('w');
+    // A fresh ordinary start keeps each side's check on the opening straight.
+    await page.reload();
+    await page.keyboard.press('Enter');
+    await page.clock.runFor(100);
   }
 });

@@ -33,7 +33,7 @@
 
 ## Build and test commands
 
-M1 is complete: use Node.js 24 LTS and npm 11; tested Node 24.18.0 / npm 11.16.0 on macOS ARM64. Exact dependency versions are pinned in `package.json` and the lockfile; `.nvmrc` records Node. Standard `npm ci`, typecheck, lint, 23 logic tests, build, dev/preview, 4 Chromium tests on both servers, 3 compatibility smoke tests, and local-origin manual driving review pass. Earlier default-sandbox port/DNS failures were resolved through permitted execution with unchanged project commands. npm reports 11 moderate development-tool findings from one minimatch advisory; production-only audit has zero findings. See `VERIFICATION.md` for evidence. The next authorized session selects M2; do not start it during the M1 closeout.
+M1 and M2 are complete: use Node.js 24 LTS and npm 11; tested Node 24.18.0 / npm 11.16.0 on macOS ARM64. Exact dependency versions are pinned in `package.json` and the lockfile; `.nvmrc` records Node. M2 typecheck/lint, 42 logic tests, build, 5 Chromium tests on both dev and preview, 3 compatibility smoke tests, and local-origin full-loop/contact/recovery review pass. M1 verified standard `npm ci`; M2 changed no dependencies. Earlier default-sandbox port/DNS failures were resolved through permitted execution with unchanged project commands. M1's audit reported 11 moderate development-tool findings from one minimatch advisory and zero production findings; not rerun in M2. See `VERIFICATION.md`. The next authorized session selects M3; do not start it during M2 closeout.
 
 | Command | Intended use |
 | --- | --- |

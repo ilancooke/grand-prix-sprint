@@ -1,3 +1,5 @@
+import type { Landmark } from '../game/types';
+
 export function drawPlayer(context: CanvasRenderingContext2D, steering: number): void {
   context.save();
   context.translate(480 + steering * 3, 467);
@@ -61,4 +63,38 @@ export function drawScenery(context: CanvasRenderingContext2D, x: number, y: num
     context.lineTo(x - 2 * scale, y - height * 0.4);
     context.fill();
   }
+}
+
+export function drawObstacle(context: CanvasRenderingContext2D, x: number, y: number,
+  scale: number, halfWidthMeters: number): void {
+  // Yellow/black shoulder tire stacks; these alone have obstacle collision shapes.
+  const width = halfWidthMeters * 2 * scale;
+  context.fillStyle = '#172c36';
+  context.fillRect(x - width / 2, y - scale * 0.9, width, scale * 0.9);
+  context.fillStyle = '#f5c85b';
+  context.fillRect(x - width / 2, y - scale * 0.7, width, scale * 0.2);
+  context.fillRect(x - width / 2, y - scale * 0.3, width, scale * 0.15);
+}
+
+export function drawLandmark(context: CanvasRenderingContext2D, x: number, y: number,
+  scale: number, landmark: Landmark): void {
+  const stand = landmark.kind === 'grandstand';
+  const width = (stand ? 10 : 6) * scale;
+  const height = (stand ? 4 : 2) * scale;
+  const top = y - 5 * scale;
+  context.fillStyle = '#b4b9a5';
+  context.fillRect(x - width * 0.4, top, scale * 0.2, y - top);
+  context.fillRect(x + width * 0.4, top, scale * 0.2, y - top);
+  context.fillStyle = stand ? '#355667' : '#f6d584';
+  context.fillRect(x - width / 2, top, width, height);
+  if (stand) {
+    for (let row = 1; row < 5; row++) {
+      context.fillStyle = row % 2 ? '#d7bf96' : '#db6a4c';
+      context.fillRect(x - width / 2, top + row * height / 5, width, height / 10);
+    }
+  }
+  context.fillStyle = stand ? '#fff0cc' : '#173a48';
+  context.font = `bold ${Math.max(1, Math.round(scale * 0.7))}px monospace`;
+  context.textAlign = 'center';
+  context.fillText(landmark.label, x, top + scale * 1.2, width * 0.95);
 }

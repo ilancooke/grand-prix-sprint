@@ -46,7 +46,7 @@ export function startApplication(): () => void {
     if (phase === 'driving') {
       const result = clock.advance(nowMilliseconds, () => {
         previous = state;
-        state = simulate(state, keys.snapshot());
+        state = simulate(state, keys.snapshot(), CIRCUIT);
       });
       alpha = result.alpha;
       if (result.interrupted) transition('paused', 'Frame interrupted. Resume to continue from here.');

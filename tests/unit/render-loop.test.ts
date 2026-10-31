@@ -7,6 +7,7 @@ function recordScene(stationMeters: number): readonly unknown[] {
   const record = (name: string) => (...values: number[]): void => { commands.push([name, ...values]); };
   const context = {
     set fillStyle(value: string) { commands.push(['color', value]); },
+    fillText: (text: string, ...values: number[]) => { commands.push(['text', text, ...values]); },
     fillRect: record('rectangle'), beginPath: record('begin'), arc: record('arc'),
     ellipse: record('ellipse'), moveTo: record('move'), lineTo: record('line'),
     closePath: record('close'), fill: record('fill'), save: record('save'),

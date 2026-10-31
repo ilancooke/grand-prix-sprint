@@ -2,7 +2,7 @@ import type { VehicleState } from '../game/types';
 
 export const VIEW = {
   width: 960, height: 540, horizonY: 190, focalPixels: 620,
-  cameraHeightMeters: 2.7, nearMeters: 4, drawSegments: 135,
+  chaseDistanceMeters: 7, cameraHeightMeters: 2.7, nearMeters: 4, drawSegments: 135,
 } as const;
 
 export interface ProjectedPoint { readonly x: number; readonly y: number; readonly scale: number }

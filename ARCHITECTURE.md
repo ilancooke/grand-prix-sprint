@@ -2,7 +2,7 @@
 
 ## Status and source of truth
 
-This document preserves the architecture plan and its assumptions. M1 now has source code, pinned local tooling, a playable free-driving slice, and passing logic/build/local-origin browser and manual verification. Its acceptance evidence is recorded in `VERIFICATION.md`. `PROGRESS.md` is the authoritative completion ledger. Later components below remain planned until their milestones are verified.
+This document preserves the architecture plan and its assumptions. M1–M2 now have pinned local tooling, a playable free-driving slice, the final circuit, meaningful handling and recoverable world contacts, with passing logic/build/local-origin browser and manual verification. Its acceptance evidence is recorded in `VERIFICATION.md`. `PROGRESS.md` is the authoritative completion ledger. Later components below remain planned until their milestones are verified.
 
 `SPEC.md`, titled **Grand Prix Sprint — Game Specification**, version 1.0, is the authoritative, frozen specification. Do not edit or replace it.
 
@@ -45,7 +45,7 @@ Keep the design as functions and small modules. Simulation receives explicit con
 
 ### Planned components and files
 
-These paths describe intended responsibilities. The M1 subset now exists; later race, AI, collision, audio, persistence, and final-UI modules remain planned. Combine small neighboring modules if that keeps the code easier to follow.
+These paths describe intended responsibilities. The M1–M2 subset now exists, including swept world/generic pair contacts; later race, AI, audio, persistence, and final-UI modules remain planned. Combine small neighboring modules if that keeps the code easier to follow.
 
 | Planned path | Responsibility |
 | --- | --- |
@@ -95,6 +95,8 @@ Use local curvature and speed to calculate outward corner load, approximately pr
 Off-road reduces available grip and adds drag without permanently immobilizing a car. Bound the playable lateral verge; an outer barrier stops further outward movement and applies a moderate speed loss/inward recovery. Recovery never advances longitudinal race progress or teleports a car along the circuit. Avoid forcing every off-road excursion back to center.
 
 Detect collisions in track coordinates using car length/width and the shortest appropriate wrapped longitudinal separation. Use swept overlap or bounded substeps for contacts if maximum relative motion could tunnel through a car or obstacle within one tick. Resolve unordered car pairs once per tick, with small lateral separation and bounded speed loss. Barriers and selected visible roadside obstacles have explicit collision shapes; decorative distant scenery does not. Cooldowns suppress repeated impact/audio spam without disabling physical separation. Handle contact near the lap seam identically to other locations. Cars must always be able to continue or rejoin.
+
+M2 implementation detail: Harbor Loop is now 2000 m, with five eased bends and a 14 m road. Track objects carry explicit immutable obstacle shapes and labeled decorative landmarks. `simulate` and `moveVehicle` take the track explicitly. World contacts return synchronous impact classifications; the current free-drive app consumes the resolved vehicle only, with adapter event wiring deferred to M6. Entry detection suppresses repeated speed loss while physical lateral separation remains active; no contact cooldown is needed yet. An obstacle squeezed against a barrier resolves toward the open side. Generic car-pair contact is tested but is not yet integrated into traffic. The camera follows 7 m behind player station to align drawn contacts. These refine the planned M2 mechanics without changing scope or recorded race assumptions.
 
 ### Opponent AI
 

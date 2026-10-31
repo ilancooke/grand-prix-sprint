@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { CIRCUIT } from '../../src/content/circuit';
 import { createDrivingState, simulate } from '../../src/game/simulate';
 import { FixedStepClock, LOOP } from '../../src/platform/loop';
 
@@ -12,7 +13,7 @@ function runSchedule(hertz: number) {
         accelerate: tick < 500 || tick >= 700,
         brake: tick >= 500 && tick < 600,
         steer: tick >= 200 && tick < 230 ? 1 : tick >= 800 && tick < 830 ? -1 : 0,
-      });
+      }, CIRCUIT);
     });
     expect(result.interrupted).toBe(false);
     expect(result.alpha).toBeGreaterThanOrEqual(0);

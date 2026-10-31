@@ -2,11 +2,11 @@
 
 ## Current handoff
 
-- **Phase:** M1 complete; session boundary reached. M2–M7 remain pending.
-- **Selected milestone:** M1 — Playable chase-view driving slice. No dependencies.
-- **Next concrete step:** In a new authorized session, begin M2: finalize the circuit, add meaningful corner/off-road handling and recoverable collisions, and run its deterministic/manual acceptance checks. Do not begin M2 in this session.
-- **Implementation verification:** Standard `npm ci`, typecheck, lint, 23 logic tests, build, all 4 Chromium tests (development and production preview), and 3 compatibility smoke tests pass. Native Chrome local-origin full-loop, controls, pause/tab-return, and 960×720 review pass. See `VERIFICATION.md`.
-- **Remaining issues:** No M1 acceptance blockers. npm reports one moderate minimatch denial-of-service advisory propagated through 11 development-tool packages; production-only audit reports zero vulnerabilities. Dependency versions remain pinned; no automatic audit fixes were applied. Full race, final handling, audio, persistence, and release performance/compatibility remain later-milestone work.
+- **Phase:** M2 complete; session boundary reached. M3–M7 remain pending.
+- **Selected milestone:** M2 — Complete circuit, meaningful handling, and recoverable collisions. Dependency M1 is complete.
+- **Next concrete step:** In the next authorized session, select M3: add exactly three opponents using shared handling, integrate generic pair contacts, and verify passing and long-run traffic. Do not start M3 during M2 closeout.
+- **Implementation verification:** Typecheck, lint, 42 logic tests, build, 5 Chromium tests on development and static preview, and 3 compatibility smoke tests pass. Native Chrome local-origin full-loop, braking, both-verge recovery and tire/barrier contact review pass. See `VERIFICATION.md`.
+- **Remaining issues:** No M2 acceptance blocker. Generic pair contacts have fixtures but are not yet integrated with traffic (M3). AI, race rules/results/replay, persistence, audio and release performance remain later work. M1's audit recorded 11 moderate development-tool findings from minimatch and zero production findings; M2 did not change dependencies or rerun the audit.
 
 ## Milestone status
 
@@ -15,7 +15,7 @@ This is the single completion ledger. Use `pending`, `in progress`, or `complete
 | Milestone | Outcome | Status | Evidence |
 | --- | --- | --- | --- |
 | M1 | Playable chase-view driving slice | complete | Standard setup/dev/preview pass; typecheck/lint/build, 23 logic tests, 4 Chromium tests on dev and preview, 3 compatibility smoke tests, and native Chrome local-origin driving/resize/interruption review pass. |
-| M2 | Complete circuit, meaningful handling, and recoverable collisions | pending | No implementation or verification yet. |
+| M2 | Complete circuit, meaningful handling, and recoverable collisions | complete | Final 2000 m circuit; braking comparison, recovery/seam/sweep fixtures; 42 logic tests, typecheck/lint/build, 5 Chromium tests on dev/preview, 3 compatibility smoke tests, and native full-loop/contact review pass. |
 | M3 | Three functioning opponents and overtaking | pending | No implementation or verification yet. |
 | M4 | Valid three-lap race, correct standings, pause, and replay | pending | No implementation or verification yet. |
 | M5 | Complete readable UI and persistent personal best | pending | No implementation or verification yet. |
@@ -73,3 +73,28 @@ This is the single completion ledger. Use `pending`, `in progress`, or `complete
 **Resolved blockers / known issue:** The prior default-sandbox bind and download failures were resolved using permitted elevated execution, with the same application commands and origin; no product workaround was introduced. Standard install emits the existing optional fsevents script warning and 11 moderate development-tool findings caused by minimatch advisory GHSA-g3hv-75wg-m249. `npm audit --json` exits 1; `npm audit --omit=dev` passes with zero findings. This affects development glob processing and is not in the production bundle. Review compatible patched lint dependencies when available; do not apply npm's suggested breaking downgrades blindly.
 
 **Next concrete step:** Stop here. In the next authorized session select M2 (M1 prerequisite now complete), read the handoff and frozen specification, and implement only M2. Leave these changes for the user's review and commit.
+
+### 2026-10-31 — M2 implemented and completed
+
+**Selected milestone:** M2, dependency M1 verified complete from its recorded acceptance evidence. **Result: complete.** M3–M7 were not started. Workspace was clean on initial permitted Git inspection; no unrelated changes were present. No commits/staging/push or other version-control mutations were made. `SPEC.md`, package pins and lockfile are unchanged.
+
+**Changes:** Finalized Harbor Loop at 2000 m / 400 segments, five eased bends, multiple wide passing straights, a tight Anchor hairpin, checkered start line, outer boundaries, original location signs/grandstands and three explicit collidable tire stacks. Added curvature/speed-squared outward drift, grass drag/reduced steering grip, bounded barrier/obstacle responses and open-side pinch recovery. Added swept two-axis, wrapped-seam world contacts and generic car-pair contact fixtures for M3. Motion/simulation now take the track explicitly. The chase camera follows 7 m behind the physical player station. Updated README, architecture, guidance, notes and verification evidence.
+
+**Changed modules:** `src/content/circuit.ts`, `src/game/{types,config,track,vehicle,simulate,collisions}.ts`, `src/render/{renderer,art,projection}.ts`, the controller call site and free-drive menu copy. New `tests/unit/{handling,collisions}.test.ts`, affected existing motion/clock/render tests, and an added keyboard both-verge browser test. No production fixture/global or new dependency was introduced.
+
+| M2 criterion | Completion evidence |
+| --- | --- |
+| Original continuous circuit, straights, ≥4 bends/both signs, challenging turn, visible line/scenery/boundaries | Five named eased bends and a straight periodic seam; native full drive crossed 2000 m and continued to 2284 m. Original line, signs, stands, tire stacks and moving decoration reviewed. Periodic render-command tests include the new art. |
+| At least two passing sections | 14 m road with 300 m Pit, 200 m Quay and 220 m Coast straights; geometry/width assertions pass. Actual traffic passing stays in M3. |
+| Braking beats excessive-speed corner entry | Same steering policy over 650–1000 m: braked **340 ticks / 81.633 m/s exit**, no off-road/contact; full throttle **349 ticks / 62.417 m/s exit**, 104 off-road ticks and one barrier. Native hairpin/braking review confirms outward load and useful speed reduction. |
+| Reduced off-road grip/speed; continued recovery | Both-sign pure fixtures and real keyboard browser checks pass. Native deliberate excursions/rejoins and tire/barrier recovery continue without reset. |
+| Noticeable, bounded contacts; no trapping; seam/tunneling | Entry-only speed loss with always-active lateral separation. Tire impact observed 60→45 km/h followed by 209 km/h recovery; fast right-barrier run recovered 77→152 km/h. Unit fixtures cover sustained barriers, initial overlap, obstacle/barrier pinch, swept maximum-speed contacts and multiple unwrapped seam crossings; station remains untouched. |
+| M1 slice and checks retained | All aliases/simultaneous input, brake/coast, focus/held-key cleanup, stall/rebase, resize and local-only launch checks pass. Exact 1200-tick equivalence at 30/60/120/144 Hz now uses final M2 handling/contacts. |
+
+**Commands/results:** `npm run dev` served the documented origin for manual and browser review. `npm test -- --reporter=verbose tests/unit/handling.test.ts tests/unit/collisions.test.ts`: 19/19 passed with comparison metrics. Final `npm run typecheck`, `npm run lint`, `npm test` (**42/42**, 7 files), `npm run build`, and `git diff --check` pass. Build: HTML 2.79 kB / CSS 3.71 kB / JS 14.46 kB. `npm run test:e2e`: **5/5** on dev (5.6 s), then **5/5** on static `npm run preview` (5.6 s). `npm run test:e2e:compat`: **3/3** Chromium/Firefox/WebKit smoke on dev (4.1 s), repeated on final preview (3.9 s). Network/console audit passes; no external runtime dependency found. Normal npm setup was already verified in M1 and was not repeated because dependencies did not change.
+
+**Manual method/limits:** Native Chrome on `http://127.0.0.1:5173`, actual keys and visible HUD/Canvas, reviewed every bend and seam, both surface departures/rejoins, braking to rest, shoulder tires, a fast barrier approach, recovery at low/high speeds and pause/resume. Road width, surface/verge contrast and scenery locations remain legible. Native multi-key holding is limited; Playwright supplies genuine simultaneous-input coverage, while the pure corner scenario supplies precise repeatable comparison. No complete-race, sound or release-performance acceptance is claimed.
+
+**Tuning/fixes:** Initial weaker hairpin/grass drag let full throttle win despite off-road drift; the failed comparison drove final peak Anchor curvature −0.0095/m and extra off-road drag `6 + 0.7 × speed` m/s². Steering grip on grass is 55%; barriers retain 72% speed, obstacles 65%, generic pair entry 85%. No scripted curve speed cap. Fixed the obstacle/barrier pinch, moved decorative signs/stands beyond the barrier, narrowed the initially overlong start stripe, made the rendered-road test sample actual asphalt colors instead of also counting new barriers, and corrected a TypeScript key-tuple inference error. Affected checks were rerun; no unresolved failures remain. No new product assumption or scope change.
+
+**Remaining work / next step:** Stop after M2 and leave changes ready for the user's commit. In a new authorized session begin M3, integrate pair resolution once per unordered pair alongside world contacts, add exactly three deterministic AI profiles, and verify overtaking/blocked lanes/long-run circulation. No M3 behavior has been added.
