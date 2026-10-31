@@ -51,7 +51,9 @@ export function startApplication(): () => void {
       alpha = result.alpha;
       if (result.interrupted) transition('paused', 'Frame interrupted. Resume to continue from here.');
     }
-    render(context, CIRCUIT, interpolateVehicle(previous.player, state.player, alpha), keys.snapshot().steer);
+    render(context, CIRCUIT, interpolateVehicle(previous.player, state.player, alpha), keys.snapshot().steer,
+      state.opponents.map((opponent, index) => ({ id: opponent.id, vehicle: interpolateVehicle(
+        previous.opponents[index]?.vehicle ?? opponent.vehicle, opponent.vehicle, alpha) })));
     screens.update(state);
     animationHandle = requestAnimationFrame(frame);
   };

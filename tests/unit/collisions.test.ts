@@ -96,4 +96,18 @@ describe('swept world and generic car contacts', () => {
       { stationMeters: 6, lateralMeters: 9, kind: 'sign', label: 'BAD' },
     ])).toThrow();
   });
+
+  it('does not multiply impact losses while steering against an already separated car', () => {
+    let a = { ...car, lateralMeters: 2, speedMetersPerSecond: 60 };
+    let b = { ...car, lateralMeters: 0, speedMetersPerSecond: 60 };
+    for (let tick = 0; tick < 120; tick++) {
+      [a, b] = resolveCarContact(a, b,
+        { ...a, stationMeters: a.stationMeters + 1, lateralMeters: a.lateralMeters - 0.1 },
+        { ...b, stationMeters: b.stationMeters + 1, lateralMeters: b.lateralMeters + 0.1 }, track);
+      expect(a.speedMetersPerSecond).toBeCloseTo(60 * CONTACT.carSpeedRetention);
+      expect(b.speedMetersPerSecond).toBeCloseTo(60 * CONTACT.carSpeedRetention);
+      expect(Math.abs(a.lateralMeters - b.lateralMeters)).toBeGreaterThan(1.8);
+    }
+  });
+
 });

@@ -1,6 +1,13 @@
-import type { Landmark } from '../game/types';
+import type { Landmark, OpponentId } from '../game/types';
 
-export function drawPlayer(context: CanvasRenderingContext2D, steering: number): void {
+const CAR_PALETTES = {
+  player: { body: '#e9513f', wing: '#ef684c', stripe: '#ffd7a5' },
+  azure: { body: '#29badb', wing: '#187aab', stripe: '#e9faff' },
+  gold: { body: '#f5c547', wing: '#de9b27', stripe: '#293946' },
+  violet: { body: '#b585ed', wing: '#8051c7', stripe: '#fff0cc' },
+} as const;
+
+function drawCar(context: CanvasRenderingContext2D, steering: number, palette: typeof CAR_PALETTES[keyof typeof CAR_PALETTES]): void {
   context.save();
   context.translate(480 + steering * 3, 467);
   context.fillStyle = '#09273188';
@@ -16,7 +23,7 @@ export function drawPlayer(context: CanvasRenderingContext2D, steering: number):
   context.fillStyle = '#657886';
   context.fillRect(-52, -45, 104, 6);
   context.fillRect(-60, 0, 120, 7);
-  context.fillStyle = '#e9513f';
+  context.fillStyle = palette.body;
   context.beginPath();
   context.moveTo(-13, -87);
   context.lineTo(13, -87);
@@ -24,7 +31,7 @@ export function drawPlayer(context: CanvasRenderingContext2D, steering: number):
   context.lineTo(-34, 15);
   context.closePath();
   context.fill();
-  context.fillStyle = '#ffd7a5';
+  context.fillStyle = palette.stripe;
   context.fillRect(-4, -83, 8, 56);
   context.fillStyle = '#102938';
   context.fillRect(-15, -42, 30, 29);
@@ -34,7 +41,7 @@ export function drawPlayer(context: CanvasRenderingContext2D, steering: number):
   context.fill();
   context.fillStyle = '#6fbcc8';
   context.fillRect(-8, -31, 16, 5);
-  context.fillStyle = '#ef684c';
+  context.fillStyle = palette.wing;
   context.fillRect(-68, 10, 136, 14);
   context.fillStyle = '#fff0cc';
   context.fillRect(-63, 13, 126, 3);
@@ -97,4 +104,20 @@ export function drawLandmark(context: CanvasRenderingContext2D, x: number, y: nu
   context.font = `bold ${Math.max(1, Math.round(scale * 0.7))}px monospace`;
   context.textAlign = 'center';
   context.fillText(landmark.label, x, top + scale * 1.2, width * 0.95);
+}
+
+export function drawPlayer(context: CanvasRenderingContext2D, steering: number): void {
+  drawCar(context, steering, CAR_PALETTES.player);
+}
+
+export function drawOpponent(context: CanvasRenderingContext2D, x: number, y: number,
+  scale: number, id: OpponentId): void {
+  context.save();
+  context.translate(x, y);
+  // The silhouette spans 162 source pixels: its physical width is 1.8 m.
+  const spriteScale = scale * 1.8 / 162;
+  context.scale(spriteScale, spriteScale);
+  context.translate(-480, -494);
+  drawCar(context, 0, CAR_PALETTES[id]);
+  context.restore();
 }

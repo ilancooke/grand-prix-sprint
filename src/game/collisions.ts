@@ -54,7 +54,7 @@ export function resolveWorldContacts(previous: VehicleState, proposed: VehicleSt
     // A shoulder object can leave too little space beside the outer barrier.
     // Choose the open side instead of clamping a car inside the obstacle.
     if (Math.abs(obstacle.lateralMeters + side * (halfWidth + CONTACT.separationMeters)) > limit) side = -side;
-    const entered = Math.abs(z) > halfLength || Math.abs(x) > halfWidth + CONTACT.separationMeters;
+    const entered = Math.abs(z) > halfLength || Math.abs(x) > halfWidth + CONTACT.separationMeters + CONTACT.geometryToleranceMeters;
     vehicle = { ...vehicle,
       lateralMeters: Math.max(-limit, Math.min(limit,
         obstacle.lateralMeters + side * (halfWidth + CONTACT.separationMeters))),
@@ -64,7 +64,7 @@ export function resolveWorldContacts(previous: VehicleState, proposed: VehicleSt
   return { vehicle, impacts };
 }
 
-// Generic two-car contact for M3. Caller resolves each unordered pair once per tick.
+// Caller applies each unordered pair response once per tick.
 // Previous and proposed states permit swept contact at the seam and at maximum speed.
 export function resolveCarContact(previousA: VehicleState, previousB: VehicleState,
   proposedA: VehicleState, proposedB: VehicleState, track: Track): readonly [VehicleState, VehicleState] {
@@ -80,7 +80,7 @@ export function resolveCarContact(previousA: VehicleState, previousB: VehicleSta
   const spacing = halfWidth + CONTACT.separationMeters;
   const limit = lateralLimitMeters(track) - spacing / 2;
   const middle = Math.max(-limit, Math.min(limit, (proposedA.lateralMeters + proposedB.lateralMeters) / 2));
-  const entered = Math.abs(z) > halfLength || Math.abs(x) > halfWidth + CONTACT.separationMeters;
+  const entered = Math.abs(z) > halfLength || Math.abs(x) > halfWidth + CONTACT.separationMeters + CONTACT.geometryToleranceMeters;
   const retention = entered ? CONTACT.carSpeedRetention : 1;
   return [
     { ...proposedA, lateralMeters: middle + side * spacing / 2,
@@ -88,4 +88,37 @@ export function resolveCarContact(previousA: VehicleState, previousB: VehicleSta
     { ...proposedB, lateralMeters: middle - side * spacing / 2,
       speedMetersPerSecond: proposedB.speedMetersPerSecond * retention },
   ];
+}
+
+// A later pair/world response can squeeze a previously separated pair together.
+// Pack only overlapping endpoint shapes into free lateral space, without applying
+// another impulse or changing station. Four cars fit comfortably across the verge.
+export function separateTraffic(vehicles: readonly VehicleState[], track: Track): readonly VehicleState[] {
+  const limit = lateralLimitMeters(track);
+  const spacing = CONTACT.carHalfWidthMeters * 2 + CONTACT.separationMeters;
+  const placed: VehicleState[] = [];
+  const result = [...vehicles];
+  const ordered = vehicles.map((vehicle, index) => ({ vehicle, index }))
+    .sort((a, b) => a.vehicle.lateralMeters - b.vehicle.lateralMeters || a.index - b.index);
+  for (const { vehicle, index } of ordered) {
+    const nearby = placed.filter((other) => Math.abs(wrappedSeparation(
+      vehicle.stationMeters, other.stationMeters, track.lengthMeters)) < CONTACT.carHalfLengthMeters * 2);
+    const obstacles = track.obstacles.filter((obstacle) => Math.abs(wrappedSeparation(
+      vehicle.stationMeters, obstacle.stationMeters, track.lengthMeters)) < CONTACT.carHalfLengthMeters + obstacle.halfLengthMeters);
+    const candidates = [vehicle.lateralMeters, -limit, limit,
+      ...nearby.flatMap((other) => [other.lateralMeters - spacing, other.lateralMeters + spacing]),
+      ...obstacles.flatMap((obstacle) => {
+        const width = obstacle.halfWidthMeters + CONTACT.carHalfWidthMeters + CONTACT.separationMeters;
+        return [obstacle.lateralMeters - width, obstacle.lateralMeters + width];
+      })].sort((a, b) => Math.abs(a - vehicle.lateralMeters) - Math.abs(b - vehicle.lateralMeters) || a - b);
+    const lateral = candidates.find((candidate) => Math.abs(candidate) <= limit + CONTACT.geometryToleranceMeters &&
+      nearby.every((other) => Math.abs(candidate - other.lateralMeters) >= spacing - CONTACT.geometryToleranceMeters) &&
+      obstacles.every((obstacle) => Math.abs(candidate - obstacle.lateralMeters) >=
+        obstacle.halfWidthMeters + CONTACT.carHalfWidthMeters + CONTACT.separationMeters - CONTACT.geometryToleranceMeters));
+    if (lateral === undefined) throw new Error('Traffic has no lateral separation space.');
+    const separated = lateral === vehicle.lateralMeters ? vehicle : { ...vehicle, lateralMeters: lateral };
+    placed.push(separated);
+    result[index] = separated;
+  }
+  return result;
 }

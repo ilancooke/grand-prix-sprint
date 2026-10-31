@@ -154,3 +154,38 @@ test('both verges slow the car and steering permits a return to asphalt', async 
     await page.clock.runFor(100);
   }
 });
+
+
+test('three distinct opponents move in the chase view and freeze with the paused field', async ({ page }) => {
+  await page.clock.install();
+  await page.goto('/');
+  const colors = async (): Promise<number[]> => page.locator('#race-view').evaluate((element) => {
+    const canvas = element as HTMLCanvasElement;
+    const data = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+    const palettes = [[41, 186, 219], [245, 197, 71], [181, 133, 237]];
+    return palettes.map((color) => {
+      let pixels = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i] === color[0] && data[i + 1] === color[1] && data[i + 2] === color[2]) pixels++;
+      }
+      return pixels;
+    });
+  });
+  await page.keyboard.press('Enter');
+  await page.clock.runFor(100);
+  const initial = await colors();
+  for (const pixels of initial) expect(pixels).toBeGreaterThan(5);
+  // The stopped player watches all three accelerate away through their actual input controllers.
+  await page.clock.runFor(2500);
+  const moving = await colors();
+  for (let i = 0; i < 3; i++) expect(moving[i]).toBeLessThan(initial[i]!);
+  await page.keyboard.press('p');
+  // Let the paused renderer settle from its interpolated frame to the frozen snapshot.
+  await page.clock.runFor(32);
+  const paused = await colors();
+  await page.clock.runFor(3000);
+  expect(await colors()).toEqual(paused);
+  await page.keyboard.press('p');
+  await page.clock.runFor(1000);
+  expect(await colors()).not.toEqual(paused);
+});

@@ -1,7 +1,7 @@
 import { HANDLING } from '../game/config';
 import { positiveModulo, segmentAt } from '../game/track';
-import type { Track, VehicleState } from '../game/types';
-import { drawLandmark, drawObstacle, drawPlayer, drawScenery } from './art';
+import type { OpponentState, Track, VehicleState } from '../game/types';
+import { drawLandmark, drawObstacle, drawOpponent, drawPlayer, drawScenery } from './art';
 import { project, VIEW } from './projection';
 import type { ProjectedPoint } from './projection';
 
@@ -19,7 +19,8 @@ function quad(context: CanvasRenderingContext2D, near: ProjectedPoint, far: Proj
   context.fill();
 }
 
-export function render(context: CanvasRenderingContext2D, track: Track, player: VehicleState, steer: number): void {
+export function render(context: CanvasRenderingContext2D, track: Track, player: VehicleState, steer: number,
+  opponents: readonly Pick<OpponentState, 'id' | 'vehicle'>[] = []): void {
   context.fillStyle = '#8bc6cc';
   context.fillRect(0, 0, VIEW.width, VIEW.height);
   context.fillStyle = '#f6da95';
@@ -58,6 +59,11 @@ export function render(context: CanvasRenderingContext2D, track: Track, player: 
     centerMeters += heading * track.segmentLengthMeters + 0.5 * curvature * track.segmentLengthMeters ** 2;
     heading += curvature * track.segmentLengthMeters;
   }
+
+  const visibleOpponents = opponents.map((opponent) => ({ ...opponent,
+    distanceMeters: positiveModulo(opponent.vehicle.stationMeters - cameraStationMeters, track.lengthMeters) }))
+    .filter((opponent) => opponent.distanceMeters >= VIEW.nearMeters)
+    .sort((a, b) => b.distanceMeters - a.distanceMeters);
 
   for (let i = strips.length - 1; i >= 0; i--) {
     const strip = strips[i];
@@ -108,6 +114,21 @@ export function render(context: CanvasRenderingContext2D, track: Track, player: 
       if (Math.floor(obstacle.stationMeters / track.segmentLengthMeters) === wrappedIndex) {
         drawObstacle(context, far.x + obstacle.lateralMeters * far.scale, far.y, far.scale, obstacle.halfWidthMeters);
       }
+    }
+    for (const opponent of visibleOpponents) {
+      const station = cameraStationMeters + opponent.distanceMeters;
+      // Draw in its road strip, far to near, so nearby road/scenery occludes
+      // distant cars and cars immediately behind the camera do not wrap ahead.
+      if (station < Math.max(cameraStationMeters + VIEW.nearMeters, (index - 1) * track.segmentLengthMeters) ||
+          station >= index * track.segmentLengthMeters) continue;
+      const distance = opponent.distanceMeters;
+      const nearDistance = VIEW.focalPixels / near.scale;
+      const farDistance = VIEW.focalPixels / far.scale;
+      const fraction = (distance - nearDistance) / (farDistance - nearDistance);
+      const roadNear = (near.x - VIEW.width / 2) / near.scale;
+      const roadFar = (far.x - VIEW.width / 2) / far.scale;
+      const point = project(roadNear + (roadFar - roadNear) * fraction + opponent.vehicle.lateralMeters, distance);
+      if (point) drawOpponent(context, point.x, point.y, point.scale, opponent.id);
     }
     if (wrappedIndex % 12 === 0) {
       const side = Math.floor(wrappedIndex / 12) % 2 === 0 ? -1 : 1;

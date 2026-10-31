@@ -1,5 +1,64 @@
 # Verification evidence
 
+## M3 — 2026-10-31
+
+**Status: complete.** M2 prerequisite evidence was read before implementation. Only M3 was implemented; M4–M7 remain pending. Initial worktree was clean; no commits/staging/push or other version-control mutations occurred. `SPEC.md`, dependencies and lockfile are unchanged.
+
+Environment: macOS ARM64, Node **24.18.0**, npm **11.16.0**, existing Playwright **1.64.1** browser installation. Native manual review used Chrome at ordinary desktop size on **http://127.0.0.1:5173**. Browser checks include the **960×720** resize. Commands requiring writes/server/browser access used permitted execution; no setup/download/audit was repeated.
+
+| Exact command | Result |
+| --- | --- |
+| `npm test -- --reporter=verbose tests/unit/ai.test.ts tests/integration/traffic.test.ts` | Used during controller tuning; all then-current 15 scenarios passed after blocked-traffic fixes. |
+| `npm test -- --reporter=verbose tests/integration/traffic.test.ts` | Final **8/8 passed**, prints all 30 full traversal times and contact/off-road counts; long-run scenario executes twice and compares complete outcomes exactly. |
+| `npm test -- tests/unit/collisions.test.ts tests/unit/ai.test.ts tests/integration/traffic.test.ts` | **29/29 passed** after the contact-entry tolerance fix; further close-queue coverage was added afterward and is included below. |
+| `npm run typecheck` | Passed on final source and again after the browser test correction. |
+| `npm run lint` | Passed on final source and again after the browser test correction. |
+| `npm test` | **61/61 passed**, 9 files, final run 580 ms. Includes exact 1200-tick equality at 30/60/120/144 Hz for all four cars and AI memory, plus all M1–M2 regressions. |
+| `npm run build` | Passed; 20 modules. HTML **2.78 kB**, CSS **3.71 kB**, JS **22.98 kB** (gzip 1.19 / 1.51 / 7.49 kB). |
+| `npm run dev` | Served the unchanged local origin for native review and browser tests; stopped before preview. |
+| `npm run test:e2e` (final managed development startup) | **6/6 Chromium passed**, **6.2 s**. |
+| `npm run test:e2e:compat` (final managed development startup) | **3/3 passed**, **4.4 s**, Chromium/Firefox/WebKit designated smoke. |
+| `npm run preview` | Served final static `dist` at the same local origin; stopped after preview checks. |
+| `npm run test:e2e` (preview already running) | **6/6 Chromium passed**, **5.8 s** after correcting first-paused-render sampling. Runtime audit reported no external HTTP requests, console errors or uncaught errors. |
+| `npm run test:e2e:compat` (preview already running) | **3/3 passed**, **4.0 s**. |
+| `git diff --check` | Passed after final source/document changes; Git used only for inspection. |
+
+### Ten full traversals per AI
+
+The normal four-car state starts from rest with the player parked at station 0. Each AI is measured over **ten complete 2000 m intervals from its own initial station**, rather than crediting its shortened first trip to the seam. All three travel at least 20 km. The run terminates when every AI has ten intervals; the faster cars continue circulating naturally while waiting for the slowest. Every tick checks forward-only displacement bounded by **84/60 m**. Two runs compare the entire final state, all crossing times, impact counts and off-road ticks exactly.
+
+Traversal seconds (rounded to 0.001 s for this table; tests retain full precision):
+
+| Traversal | Azure (cyan) | Gold (yellow) | Violet (purple) |
+| --- | --- | --- | --- |
+| 1, from rest | 29.372 | 30.728 | 28.384 |
+| 2 | 27.084 | 28.380 | 26.143 |
+| 3 | 27.084 | 28.380 | 26.147 |
+| 4 | 27.084 | 28.382 | 26.145 |
+| 5 | 27.084 | 28.383 | 26.148 |
+| 6 | 27.084 | 28.383 | 26.143 |
+| 7 | 27.084 | 28.383 | 26.147 |
+| 8 | 27.084 | 28.383 | 26.145 |
+| 9 | 27.084 | 28.383 | 26.148 |
+| 10 | 27.084 | 28.384 | 26.142 |
+
+Both runs: **0 car impacts, 0 barrier impacts, 0 obstacle impacts; 0 off-road ticks for every AI**. The measured maximum is **30.728187 s** including starting acceleration; the regression requires **<32 s per full traversal**, zero world/car impacts and zero off-road ticks for this particular natural-field scenario. These are evidence-derived fixture bounds, not a claim about a universal acceptable collision rate. Physical traversal times are not M4 legal lap timing.
+
+Separate scenarios verify faster AI passing slower AI and the player, normal player inputs passing an AI side by side, three blocked lanes following/braking then opening, close stopped-queue recovery, off-road steering recovery, seam contacts at 0/2000 m, and a 600-tick four-car obstacle/barrier pileup. The crowded fixture asserts no endpoint car overlap and continued progress, with fewer than 20 impacts over its deliberately overlapping initial state. A 120-tick inward-steering contact fixture verifies exactly one 15% entry speed loss rather than repeated multiplication.
+
+### Manual traffic review and resolved defects
+
+Native Chrome used actual local-origin Start/W/A/D/S/P controls and observed Canvas/HUD, driving behind, beside and through the field:
+
+- Cyan, yellow and purple silhouettes remain distinct on straights and bends; depth scaling, exposed wheels/bodywork/rear wings and nearby side-by-side cars are readable. Normal controls remain responsive with all four cars moving.
+- Approached close traffic at **368–390 m / 273–278 km/h**, with Gold alongside right and Azure ahead left. Steering and throttle continued past nearby cars to **610–629 m / 294–298 km/h** without a reset. Car contact gives visible separation and a bounded speed change, then permits recovery.
+- Braking near Anchor reduced speed to **39–44 km/h at 716–720 m** and let Gold pass ahead again. Lane width permits passing and being passed. P freezes the field and explicit resume preserves the drive.
+- Native multi-key holding is limited; genuine simultaneous-key browser coverage and deterministic traffic scenarios supplement the live driving review. M2 full-loop/scenery/braking evidence remains intact. No complete-race, audio or measured-performance acceptance is claimed.
+
+Resolved during implementation: initial unit assumptions overlooked profile speed caps and preferred lanes; corrected the fixtures. A blocked queue exposed premature cutback and zero-speed throttle deadband trapping; directional transit checks, following clearance, and bounded creep toward a clear lane resolve both blocked and exceptionally close stopped traffic. A four-car pileup exposed re-overlap from later pair/world responses; a final free-space lateral constraint fixes it without another impulse or longitudinal correction. Manual contact exposed floating-point rounding at the separation boundary; a named 1e-9 m tolerance prevents repeated entry penalties, with a sustained-contact regression. The first preview traffic-pixel check sampled the pre-pause interpolated image; it now waits one render before comparing the frozen snapshot. All affected checks pass after fixes. Existing Playwright NO_COLOR/FORCE_COLOR warnings remain benign.
+
+No M3 blocker remains. Three-lap grid/countdown/legality/standings/results/replay belong to M4; persistence/UI to M5; final audio/presentation to M6; release performance/full compatibility to M7. Prior development-only minimatch findings remain recorded below and were not re-audited. Stop at M3 and leave changes ready for the user's commit.
+
 ## M2 — 2026-10-31
 
 **Status: complete.** M1 prerequisite evidence was read before implementation. Only M2 was implemented; M3–M7 remain pending. Workspace was clean at start; no version-control mutations were made and `SPEC.md`, dependencies and lockfile are unchanged.

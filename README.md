@@ -2,7 +2,7 @@
 
 An original desktop-browser arcade racer, built incrementally against the frozen [specification](SPEC.md).
 
-The current **M2 driving slice** has a finished 2000 m Harbor Loop with five bends, a checkered start line, braking markers, wide passing straights, off-road handling, barriers, and collidable shoulder tire stacks. M1 and M2 are **complete**; the application currently offers free driving. See [PROGRESS.md](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md) for acceptance evidence.
+The current **M3 driving slice** adds exactly three opponents to the 2000 m Harbor Loop: cyan Azure, yellow Gold, and purple Violet. They brake for corners, follow traffic, pass and recover using the same handling/contact rules as the player. M1–M3 are **complete**; the application currently offers free driving with traffic. See [PROGRESS.md](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md) for acceptance evidence.
 
 ## Setup and launch
 
@@ -47,7 +47,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Playwright starts the local development server automatically, or reuses an existing server outside CI. The five-test suite covers Start/Enter, every driving alias, visible steering while accelerating, coasting/braking, both-verge slowdown and recovery, pause, focus cleanup, resize, exceptional stalls, and local-only requests without console errors. To check the static bundle, start `npm run preview` after building and run `npm run test:e2e` in another terminal; Playwright reuses that server outside CI. Browser binaries are development-only downloads.
+Playwright starts the local development server automatically, or reuses an existing server outside CI. The six-test suite covers Start/Enter, every driving alias, visible steering while accelerating, coasting/braking, both-verge slowdown and recovery, pause, focus cleanup, resize, exceptional stalls, three distinct moving opponents and their paused field, and local-only requests without console errors. To check the static bundle, start `npm run preview` after building and run `npm run test:e2e` in another terminal; Playwright reuses that server outside CI. Browser binaries are development-only downloads.
 
 ```sh
 npx playwright install firefox webkit
@@ -58,8 +58,10 @@ The current driving-slice compatibility smoke check passes in Chromium, Firefox,
 
 For manual M2 verification, drive the full 2000 m loop through Lighthouse right, Anchor hairpin, Breakwater right, Pines left, and Home right. Brake at the Anchor approach markers: about **170–180 km/h** at its apex permits a clean turn with steering, while excessive speed overwhelms steering and carries the car wide. Grass reduces grip and speed; steer back with throttle to recover. The yellow/black tire stacks at **180 m left**, **660 m right**, and **1440 m left** are collidable. Trees, signs, and stands are decoration beyond the driving verge. Try both shoulders, barriers and tire stacks at low/high speed, then continue without reloading. Inspect the start line/scenery across the seam, resize, pause/resume, and switch tabs while driving.
 
+For manual M3 review, approach the field on the opening straight and use the available road width to pass beside Azure or Gold. Brake and let an opponent pass you, try a gentle side contact, then recover with steering/throttle. Watch the opponents brake before Anchor and accelerate afterward. Pause freezes the whole field. Formal positions and lap timing arrive in M4.
+
 ## Implementation scope
 
-Strict TypeScript, Canvas 2D procedural graphics, semantic HTML/CSS, and a 60 Hz pure simulation with interpolated rendering. No game/UI framework or third-party art is used. Circuit data is passed explicitly into motion/contact calculations. Corner load grows with speed squared; contact separation never changes longitudinal position. Generic two-car contacts have fixtures ready for M3, but no opponents are present yet.
+Strict TypeScript, Canvas 2D procedural graphics, semantic HTML/CSS, and a 60 Hz pure simulation with interpolated rendering. No game/UI framework or third-party art is used. Circuit data is passed explicitly into motion/contact calculations. Corner load grows with speed squared; contact separation never changes longitudinal position. All four cars use swept pair/world contacts and lateral separation without longitudinal recovery jumps. Small AI speed/acceleration/corner-caution differences produce distinct performance. The deterministic traffic regression runs each AI for ten full traversals twice and compares exact outcomes.
 
-Three opponents, race rules/countdown/results/replay, persistent records, and audio belong to M3–M6. The free-drive UI does not claim to run a complete race. See [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) for current choices and limitations. Stop after M2; no commits are created.
+Race rules/countdown/results/replay, persistent records, and audio belong to M4–M6. The free-drive UI does not claim to run a complete race. See [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) for current choices and limitations. M4 is the next implementation milestone; no commits are created.

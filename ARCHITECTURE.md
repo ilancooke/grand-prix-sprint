@@ -2,7 +2,7 @@
 
 ## Status and source of truth
 
-This document preserves the architecture plan and its assumptions. M1–M2 now have pinned local tooling, a playable free-driving slice, the final circuit, meaningful handling and recoverable world contacts, with passing logic/build/local-origin browser and manual verification. Its acceptance evidence is recorded in `VERIFICATION.md`. `PROGRESS.md` is the authoritative completion ledger. Later components below remain planned until their milestones are verified.
+This document preserves the architecture plan and its assumptions. M1–M3 now have pinned local tooling, a playable free-driving traffic slice, the final circuit, meaningful handling, recoverable contacts and exactly three deterministic opponents, with passing logic/build/local-origin browser and manual verification. Its acceptance evidence is recorded in `VERIFICATION.md`. `PROGRESS.md` is the authoritative completion ledger. Later components below remain planned until their milestones are verified.
 
 `SPEC.md`, titled **Grand Prix Sprint — Game Specification**, version 1.0, is the authoritative, frozen specification. Do not edit or replace it.
 
@@ -45,7 +45,7 @@ Keep the design as functions and small modules. Simulation receives explicit con
 
 ### Planned components and files
 
-These paths describe intended responsibilities. The M1–M2 subset now exists, including swept world/generic pair contacts; later race, AI, audio, persistence, and final-UI modules remain planned. Combine small neighboring modules if that keeps the code easier to follow.
+These paths describe intended responsibilities. The M1–M3 subset now exists, including swept world/pair contacts and deterministic AI; later race, audio, persistence, and final-UI modules remain planned. Combine small neighboring modules if that keeps the code easier to follow.
 
 | Planned path | Responsibility |
 | --- | --- |
@@ -96,13 +96,15 @@ Off-road reduces available grip and adds drag without permanently immobilizing a
 
 Detect collisions in track coordinates using car length/width and the shortest appropriate wrapped longitudinal separation. Use swept overlap or bounded substeps for contacts if maximum relative motion could tunnel through a car or obstacle within one tick. Resolve unordered car pairs once per tick, with small lateral separation and bounded speed loss. Barriers and selected visible roadside obstacles have explicit collision shapes; decorative distant scenery does not. Cooldowns suppress repeated impact/audio spam without disabling physical separation. Handle contact near the lap seam identically to other locations. Cars must always be able to continue or rejoin.
 
-M2 implementation detail: Harbor Loop is now 2000 m, with five eased bends and a 14 m road. Track objects carry explicit immutable obstacle shapes and labeled decorative landmarks. `simulate` and `moveVehicle` take the track explicitly. World contacts return synchronous impact classifications; the current free-drive app consumes the resolved vehicle only, with adapter event wiring deferred to M6. Entry detection suppresses repeated speed loss while physical lateral separation remains active; no contact cooldown is needed yet. An obstacle squeezed against a barrier resolves toward the open side. Generic car-pair contact is tested but is not yet integrated into traffic. The camera follows 7 m behind player station to align drawn contacts. These refine the planned M2 mechanics without changing scope or recorded race assumptions.
+M2 implementation detail: Harbor Loop is now 2000 m, with five eased bends and a 14 m road. Track objects carry explicit immutable obstacle shapes and labeled decorative landmarks. `simulate` and `moveVehicle` take the track explicitly. World contacts return synchronous impact classifications; the current free-drive app consumes the resolved vehicle only, with adapter event wiring deferred to M6. Entry detection suppresses repeated speed loss while physical lateral separation remains active; no contact cooldown is needed yet. An obstacle squeezed against a barrier resolves toward the open side. M3 now integrates each unordered car pair once, rechecks world constraints, and packs endpoint overlaps into free lateral space without a second impulse or station correction. The camera follows 7 m behind player station to align drawn contacts. These refine the planned M2 mechanics without changing scope or recorded race assumptions.
 
 ### Opponent AI
 
 Exactly three profiles provide small differences in straight speed, acceleration, corner caution, and passing preference. A deterministic lookahead controller estimates a safe target speed from upcoming curvature and braking distance, accelerates on straights, and brakes before corners. Do not use a scripted longitudinal position timeline, rubber-band teleports, or a second set of physics rules.
 
 Choose a preferred lateral line, detect a slower car ahead, and evaluate a few candidate passing lanes against car widths, road boundaries, and a forward safety gap. Commit briefly with hysteresis to avoid lane oscillation. If no lane is safe, follow and brake; retry when space opens. An off-track recovery controller steers toward the road with reduced throttle. Test prolonged blocked traffic, side-by-side racing, and seam crossings. This small controller is preferable to machine learning, full pathfinding, or expensive optimal racing-line computation.
+
+M3 implementation detail: `src/content/opponents.ts` supplies Azure/Gold/Violet profiles (caps 78/75/81 m/s, acceleration 17/16/18 m/s², corner drift budgets 6.6/6.2/7 m/s). `moveVehicle` accepts explicit performance with the player default unchanged. The controller samples 165 m ahead, uses shared braking capability and a margin, feeds forward shared outward load through steering, checks front/rear and lane-transit safety, and commits for 120 ticks. It follows blocked traffic and creeps toward an available lane if stopped too close to turn freely. Four cars read one prior snapshot and update at 60 Hz; impacts are synchronous records. Provisional free-drive opponents start 22/40/58 m ahead; M4 will replace this with its specified pre-line grid and countdown. A final lateral-only placement constraint prevents later pair/world resolution from re-overlapping a crowded field. Geometry tolerance prevents floating-point retriggering of entry penalties. Opponents interpolate unwrapped positions and render in depth-sorted road strips with original palettes. No legal standings/lap clock is derived yet. These choices refine the planned M3 controller/contact integration without changing product scope.
 
 ### Race progression and results
 
