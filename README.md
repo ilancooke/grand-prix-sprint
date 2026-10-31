@@ -2,7 +2,7 @@
 
 An original desktop-browser arcade racer, built incrementally against the frozen [specification](SPEC.md).
 
-The current **M3 driving slice** adds exactly three opponents to the 2000 m Harbor Loop: cyan Azure, yellow Gold, and purple Violet. They brake for corners, follow traffic, pass and recover using the same handling/contact rules as the player. M1–M3 are **complete**; the application currently offers free driving with traffic. See [PROGRESS.md](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md) for acceptance evidence.
+The current **M4 race slice** runs a complete three-lap race on the 2000 m Harbor Loop against cyan Azure, yellow Gold, and purple Violet. A stationary grid and three-second countdown lead into validated laps, live standings, lap clocks, frozen results, and replay. See [PROGRESS.md](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md) for milestone status and acceptance evidence.
 
 ## Setup and launch
 
@@ -13,7 +13,7 @@ npm ci
 npm run dev
 ```
 
-Open **http://127.0.0.1:5173** in a modern desktop browser. Click **Start driving** or press **Enter**. Use a viewport of at least **960×720**; 1280×800 or larger is preferred. Initial package/browser installation needs network access; gameplay uses local files and has no backend, credentials, hosted assets, or API dependency.
+Open **http://127.0.0.1:5173** in a modern desktop browser. Click **Start Race** or press **Enter**. Use a viewport of at least **960×720**; 1280×800 or larger is preferred. Initial package/browser installation needs network access; gameplay uses local files and has no backend, credentials, hosted assets, or API dependency.
 
 `config/server.ts` is the single host/port configuration for development, preview, and browser tests. Keep the same origin for future personal-record checks. Opening source files directly with `file://` is not supported.
 
@@ -26,7 +26,7 @@ Open **http://127.0.0.1:5173** in a modern desktop browser. Click **Start drivin
 | A / Left | Steer left |
 | D / Right | Steer right |
 | Escape / P | Pause or resume |
-| Enter | Start or activate the focused menu/resume control |
+| Enter | Start, replay, or activate the focused menu/resume control |
 
 Hold acceleration and steering together. Releasing acceleration slows the car. Focus loss, hidden tabs, or frame gaps above 250 ms pause immediately and clear held keys. Returning to the game requires explicit resume; time spent away is never simulated.
 
@@ -47,21 +47,25 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Playwright starts the local development server automatically, or reuses an existing server outside CI. The six-test suite covers Start/Enter, every driving alias, visible steering while accelerating, coasting/braking, both-verge slowdown and recovery, pause, focus cleanup, resize, exceptional stalls, three distinct moving opponents and their paused field, and local-only requests without console errors. To check the static bundle, start `npm run preview` after building and run `npm run test:e2e` in another terminal; Playwright reuses that server outside CI. Browser binaries are development-only downloads.
+Playwright starts the local development server automatically, or reuses an existing server outside CI. The eight-test suite covers Start/Enter, every driving alias, visible steering while accelerating, coasting/braking, both-verge slowdown and recovery, pause, focus cleanup, resize, exceptional stalls, three distinct moving opponents and their paused field, local-only requests without console errors, countdown immobility and interruption timing, and a bounded complete keyboard race with exact result times and fresh replay. The full-race driver lives only under `tests/` and sends ordinary keyboard events; no test fixture or debugging API ships in the game. To check the static bundle, start `npm run preview` after building and run `npm run test:e2e` in another terminal; Playwright reuses that server outside CI. Browser binaries are development-only downloads.
 
 ```sh
 npx playwright install firefox webkit
 npm run test:e2e:compat
 ```
 
-The current driving-slice compatibility smoke check passes in Chromium, Firefox, and WebKit. Full-release compatibility remains M7 work. A local server must be permitted to listen on port 5173; restricted environments may require permitted execution for setup, server startup, and browser tests. See [VERIFICATION.md](VERIFICATION.md) for results and earlier resolved environment limits.
+The current race-slice compatibility smoke check passes in Chromium, Firefox, and WebKit. Full-release compatibility remains M7 work. A local server must be permitted to listen on port 5173; restricted environments may require permitted execution for setup, server startup, and browser tests. See [VERIFICATION.md](VERIFICATION.md) for results and earlier resolved environment limits.
 
 For manual M2 verification, drive the full 2000 m loop through Lighthouse right, Anchor hairpin, Breakwater right, Pines left, and Home right. Brake at the Anchor approach markers: about **170–180 km/h** at its apex permits a clean turn with steering, while excessive speed overwhelms steering and carries the car wide. Grass reduces grip and speed; steer back with throttle to recover. The yellow/black tire stacks at **180 m left**, **660 m right**, and **1440 m left** are collidable. Trees, signs, and stands are decoration beyond the driving verge. Try both shoulders, barriers and tire stacks at low/high speed, then continue without reloading. Inspect the start line/scenery across the seam, resize, pause/resume, and switch tabs while driving.
 
-For manual M3 review, approach the field on the opening straight and use the available road width to pass beside Azure or Gold. Brake and let an opponent pass you, try a gentle side contact, then recover with steering/throttle. Watch the opponents brake before Anchor and accelerate afterward. Pause freezes the whole field. Formal positions and lap timing arrive in M4.
+For manual M3 review, approach the field on the opening straight and use the available road width to pass beside Azure or Gold. Brake and let an opponent pass you, try a gentle side contact, then recover with steering/throttle. Watch the opponents brake before Anchor and accelerate afterward. Pause freezes the whole field. The HUD shows authoritative lap, position, current lap time and race best.
+
+For manual M4 review, start from the menu, observe 3/2/1 with a stationary field and zero clock, and drive three full circuits. Check 1/3 → 2/3 → 3/3, current/best lap changes, position as rivals pass, and immediate frozen results at the third finish. Pause during countdown and racing, switch tabs, then explicitly resume. Replay should show a fresh stopped grid, zero clock and no race best.
 
 ## Implementation scope
 
 Strict TypeScript, Canvas 2D procedural graphics, semantic HTML/CSS, and a 60 Hz pure simulation with interpolated rendering. No game/UI framework or third-party art is used. Circuit data is passed explicitly into motion/contact calculations. Corner load grows with speed squared; contact separation never changes longitudinal position. All four cars use swept pair/world contacts and lateral separation without longitudinal recovery jumps. Small AI speed/acceleration/corner-caution differences produce distinct performance. The deterministic traffic regression runs each AI for ten full traversals twice and compares exact outcomes.
 
-Race rules/countdown/results/replay, persistent records, and audio belong to M4–M6. The free-drive UI does not claim to run a complete race. See [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) for current choices and limitations. M4 is the next implementation milestone; no commits are created.
+All cars start just before the line. The first forward start crossing arms the circuit; it awards no lap. Quarter-circuit gates must be crossed in order before each subsequent finish crossing. Countdown and pauses do not enter race times; the first lap includes grid-to-line travel. Results appear immediately after the player's third valid lap and freeze the field. **Race again** or Enter starts a clean grid/countdown without reloading. BEST means the best completed player lap in the current race.
+
+Persistent personal records and final UI polish remain M5 work; audio remains M6, and release/performance acceptance remains M7. No saved record or audio is provided yet. See [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) for current choices and limitations. Stop at M4; no commits are created.

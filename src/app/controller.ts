@@ -1,5 +1,5 @@
 import { CIRCUIT } from '../content/circuit';
-import { createDrivingState, simulate } from '../game/simulate';
+import { createRace, pauseRace, resumeRace, stepRace } from '../game/race';
 import { bindKeyboard, HeldKeys } from '../platform/input';
 import { FixedStepClock } from '../platform/loop';
 import { interpolateVehicle } from '../render/projection';
@@ -12,58 +12,75 @@ export function startApplication(): () => void {
   if (!context) throw new Error('Canvas 2D is required to play Grand Prix Sprint.');
   const keys = new HeldKeys();
   const clock = new FixedStepClock();
-  let phase: 'menu' | 'driving' | 'paused' = 'menu';
-  let state = createDrivingState();
-  let previous = state;
+  let menu = true;
+  let state = createRace();
+  let previous = state.driving;
   let animationHandle = 0;
+  const active = (): boolean => !menu && (state.status.kind === 'countdown' || state.status.kind === 'racing');
 
-  const transition = (next: typeof phase, reason = 'Your drive is on hold.'): void => {
-    // Hidden tabs cannot be resumed programmatically into an advancing simulation.
-    if (next === 'driving' && document.hidden) return;
+  const refreshPhase = (reason = 'Your race is on hold.'): void => {
     keys.clear();
     clock.reset();
-    previous = state;
-    phase = next;
-    screens.show(phase, reason);
+    previous = state.driving;
+    screens.show(menu ? 'menu' : state.status.kind, reason);
   };
-  const confirm = (): void => { if (phase !== 'driving') transition('driving'); };
+  const confirm = (): void => {
+    if (document.hidden) return;
+    if (menu || state.status.kind === 'results') { state = createRace(); menu = false; }
+    else if (state.status.kind === 'paused') state = resumeRace(state);
+    else return;
+    refreshPhase();
+  };
   const pause = (): void => {
-    if (phase === 'driving') transition('paused');
-    else if (phase === 'paused') transition('driving');
+    if (menu) return;
+    if (active()) state = pauseRace(state);
+    else if (state.status.kind === 'paused' && !document.hidden) state = resumeRace(state);
+    else return;
+    refreshPhase();
   };
   const interrupt = (): void => {
-    if (phase === 'driving') transition('paused', 'Focus lost. Press Resume when you are ready.');
+    if (active()) { state = pauseRace(state); refreshPhase('Focus lost. Press Resume when you are ready.'); }
   };
-  screens.startButton.addEventListener('click', confirm);
-  screens.resumeButton.addEventListener('click', confirm);
+  const buttons = [screens.startButton, screens.resumeButton, screens.replayButton];
+  for (const button of buttons) button.addEventListener('click', confirm);
   const unbindKeyboard = bindKeyboard(keys, {
-    ownsDrivingInput: () => phase !== 'menu',
-    isDriving: () => phase === 'driving', confirm, pause, interrupt,
+    ownsDrivingInput: () => !menu,
+    isDriving: active, confirm, pause, interrupt,
   });
 
   const frame = (nowMilliseconds: number): void => {
     let alpha = 1;
-    if (phase === 'driving') {
+    if (active()) {
       const result = clock.advance(nowMilliseconds, () => {
-        previous = state;
-        state = simulate(state, keys.snapshot(), CIRCUIT);
+        previous = state.driving;
+        const kind = state.status.kind;
+        state = stepRace(state, keys.snapshot(), CIRCUIT);
+        if (kind !== state.status.kind) {
+          // Do not reset the accumulator inside its tick callback. GO needs no
+          // rebase; results stop further ticks and clear all held input.
+          if (state.status.kind === 'results') keys.clear();
+          previous = state.driving;
+          screens.show(state.status.kind, '');
+        }
       });
-      alpha = result.alpha;
-      if (result.interrupted) transition('paused', 'Frame interrupted. Resume to continue from here.');
+      alpha = state.status.kind === 'results' ? 1 : result.alpha;
+      if (result.interrupted) {
+        state = pauseRace(state);
+        refreshPhase('Frame interrupted. Resume to continue from here.');
+      }
     }
-    render(context, CIRCUIT, interpolateVehicle(previous.player, state.player, alpha), keys.snapshot().steer,
-      state.opponents.map((opponent, index) => ({ id: opponent.id, vehicle: interpolateVehicle(
+    render(context, CIRCUIT, interpolateVehicle(previous.player, state.driving.player, alpha), keys.snapshot().steer,
+      state.driving.opponents.map((opponent, index) => ({ id: opponent.id, vehicle: interpolateVehicle(
         previous.opponents[index]?.vehicle ?? opponent.vehicle, opponent.vehicle, alpha) })));
     screens.update(state);
     animationHandle = requestAnimationFrame(frame);
   };
-  screens.show('menu', '');
+  refreshPhase();
   animationHandle = requestAnimationFrame(frame);
 
   return () => {
     cancelAnimationFrame(animationHandle);
     unbindKeyboard();
-    screens.startButton.removeEventListener('click', confirm);
-    screens.resumeButton.removeEventListener('click', confirm);
+    for (const button of buttons) button.removeEventListener('click', confirm);
   };
 }

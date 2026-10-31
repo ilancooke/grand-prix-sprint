@@ -47,3 +47,17 @@ export const AI = {
   speedDeadbandMetersPerSecond: 0.6,
   recoverySpeedMetersPerSecond: 22,
 } as const;
+
+export const RACE = {
+  laps: 3,
+  sectors: 4,
+  countdownTicks: 180,
+  stationToleranceMeters: 1e-8,
+  carOrder: ['player', 'azure', 'gold', 'violet'],
+  grid: [
+    { stationMeters: -8, lateralMeters: -1.6 },
+    { stationMeters: -8, lateralMeters: 1.6 },
+    { stationMeters: -16, lateralMeters: -1.6 },
+    { stationMeters: -16, lateralMeters: 1.6 },
+  ],
+} as const;

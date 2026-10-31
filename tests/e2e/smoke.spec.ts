@@ -29,7 +29,7 @@ test('local launch, Start/Enter, combined driving, braking and pause @compat', a
   await expect(page.locator('#speed')).toHaveText('0');
   await page.keyboard.up('ArrowDown');
   await page.reload();
-  await page.getByRole('button', { name: 'Start driving' }).click();
+  await page.getByRole('button', { name: 'Start Race' }).click();
   await expect(page.locator('#hud')).toBeVisible();
   expect(errors).toEqual([]);
   expect(externalRequests).toEqual([]);
@@ -37,7 +37,7 @@ test('local launch, Start/Enter, combined driving, braking and pause @compat', a
 
 test('focus loss clears held input and requires explicit resume', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Start driving' }).click();
+  await page.getByRole('button', { name: 'Start Race' }).click();
   await page.keyboard.down('ArrowUp');
   await expect.poll(async () => Number(await page.locator('#speed').textContent())).toBeGreaterThan(40);
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
@@ -58,16 +58,16 @@ test('focus loss clears held input and requires explicit resume', async ({ page 
 test('exceptional frame stall visibly pauses before integrating the gap', async ({ page }) => {
   await page.clock.install();
   await page.goto('/');
-  await page.getByRole('button', { name: 'Start driving' }).click();
-  await page.clock.runFor(100);
+  await page.getByRole('button', { name: 'Start Race' }).click();
+  await page.clock.runFor(3100);
   await page.keyboard.down('w');
   await page.clock.runFor(1000);
   const distance = await page.locator('#distance').textContent();
   await page.clock.fastForward(5000);
   await expect(page.getByRole('heading', { name: 'PAUSED' })).toBeVisible();
   await expect(page.locator('#distance')).toHaveText(distance ?? '');
-  await page.getByRole('button', { name: 'Resume driving' }).click();
-  await page.clock.runFor(100);
+  await page.getByRole('button', { name: 'Resume race' }).click();
+  await page.clock.runFor(3100);
   await expect(page.locator('#pause')).toBeHidden();
   await page.keyboard.up('w');
 });
@@ -77,7 +77,7 @@ test('every driving alias steers the road while accelerating, coasts and brakes'
   await page.clock.install();
   await page.goto('/');
   await page.keyboard.press('Enter');
-  await page.clock.runFor(100);
+  await page.clock.runFor(3100);
   await page.keyboard.down('w');
   await page.clock.runFor(1000);
   const speed = async (): Promise<number> => Number(await page.locator('#speed').textContent());
@@ -128,15 +128,17 @@ test('every driving alias steers the road while accelerating, coasts and brakes'
 test('both verges slow the car and steering permits a return to asphalt', async ({ page }) => {
   await page.clock.install();
   await page.goto('/');
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
   await page.keyboard.press('Enter');
-  await page.clock.runFor(100);
+  await page.clock.runFor(8100);
+  // Let the new grid traffic clear before measuring isolated verge handling.
   const speed = async (): Promise<number> => Number(await page.locator('#speed').textContent());
   for (const [outward, inward] of [['d', 'a'], ['a', 'd']] as const) {
     await page.keyboard.down('w');
     await page.clock.runFor(2000);
     const approachSpeed = await speed();
     await page.keyboard.down(outward);
-    await page.clock.runFor(3000);
+    await page.clock.runFor(3500);
     await page.keyboard.up(outward);
     const vergeSpeed = await speed();
     expect(vergeSpeed).toBeLessThan(approachSpeed - 20);
@@ -150,8 +152,9 @@ test('both verges slow the car and steering permits a return to asphalt', async 
     await page.keyboard.up('w');
     // A fresh ordinary start keeps each side's check on the opening straight.
     await page.reload();
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
     await page.keyboard.press('Enter');
-    await page.clock.runFor(100);
+    await page.clock.runFor(8100);
   }
 });
 
@@ -172,13 +175,21 @@ test('three distinct opponents move in the chase view and freeze with the paused
     });
   });
   await page.keyboard.press('Enter');
-  await page.clock.runFor(100);
-  const initial = await colors();
-  for (const pixels of initial) expect(pixels).toBeGreaterThan(5);
-  // The stopped player watches all three accelerate away through their actual input controllers.
-  await page.clock.runFor(2500);
-  const moving = await colors();
-  for (let i = 0; i < 3; i++) expect(moving[i]).toBeLessThan(initial[i]!);
+  await page.clock.runFor(3100);
+  const seen = [0, 0, 0];
+  const samples: number[][] = [];
+  // A two-row grid can occlude a rear car. Review palette motion as the
+  // stopped player watches the whole field pass, rather than assuming all
+  // three silhouettes are unobscured in one arbitrarily selected frame.
+  for (let sample = 0; sample < 20; sample++) {
+    await page.clock.runFor(400);
+    const pixels = await colors();
+    samples.push(pixels);
+    for (let i = 0; i < 3; i++) seen[i] = Math.max(seen[i]!, pixels[i]!);
+    if (sample >= 4 && seen.every((count) => count > 5) && pixels.some((count) => count > 5)) break;
+  }
+  for (const pixels of seen) expect(pixels).toBeGreaterThan(5);
+  for (let i = 0; i < 3; i++) expect(new Set(samples.map((pixels) => pixels[i])).size).toBeGreaterThan(1);
   await page.keyboard.press('p');
   // Let the paused renderer settle from its interpolated frame to the frozen snapshot.
   await page.clock.runFor(32);

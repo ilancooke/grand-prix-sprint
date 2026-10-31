@@ -1,5 +1,56 @@
 # Verification evidence
 
+## M4 — 2026-10-31
+
+**Status: complete.** M3 prerequisite evidence was read before implementation; M1–M2 are also complete. Only M4 was implemented. M5–M7 remain pending. Initial worktree was clean; no commits/staging/push or other version-control mutations occurred. `SPEC.md`, package pins and lockfile are unchanged.
+
+Environment: macOS ARM64, Node **24.18.0**, npm **11.16.0**, existing Playwright **1.64.1** browsers. Native manual review used Chrome **156.0.8078.74** on **http://127.0.0.1:5173**. Automated browser viewport is 1280×800 with the retained 960×720 resize check. Commands needing writes/server/browser access used permitted execution; no setup/download/audit was repeated.
+
+| Exact command | Result |
+| --- | --- |
+| `npm test -- tests/unit/race.test.ts tests/integration/race.test.ts` | Initial **24/24 passed**; later exact-tie and grass-finish cases are included in the final suite below. |
+| `npm test -- --reporter=verbose tests/unit/race.test.ts tests/integration/race.test.ts` | **25/25 passed** after exact-tie addition; printed complete-race clocks/finish data below. The grass-finish case was added afterward. |
+| `npm run typecheck` | Passed on final source/tests. |
+| `npm run lint` | Passed on final source/tests. |
+| `npm test` | Final **87/87 passed**, 11 files, 1.01 s. Includes 26 new race tests and all M1–M3 regressions. |
+| `npm run build` | Passed; 22 modules. HTML **3.63 kB**, CSS **4.19 kB**, JS **28.08 kB** (gzip 1.42 / 1.62 / 9.05 kB). |
+| `npm run test:e2e -- --grep 'bounded keyboard' --repeat-each=2 --workers=2` | **2/2 passed**, 30.7 s after freezing the test clock before activation. |
+| `npm run test:e2e -- --grep 'both verges' --repeat-each=2` | **2/2 passed**, 13.4 s after letting grid traffic clear before isolated handling measurement. |
+| `npm run dev` | Served documented origin for native full-race review and browser tests; stopped before preview. |
+| `npm run test:e2e` (final development server) | **8/8 Chromium passed**, 31.2 s. |
+| `npm run test:e2e:compat` (final development server) | **3/3 Chromium/Firefox/WebKit smoke passed**, 7.1 s. |
+| `npm run preview` | Served final static build at the same local origin; native Start/Enter/countdown/P review passed. Stopped after verification. |
+| `npm run test:e2e` (final preview already running) | **8/8 Chromium passed**, 31.3 s. Includes exact displayed complete-race result times and fresh replay. |
+| `npm run test:e2e:compat` (final preview already running) | **3/3 passed**, 7.0 s. |
+| `git diff --check` and scope inspection | Passed after final documentation changes; frozen specification/dependencies unchanged; Git used only for inspection. Core/browser API and production fixture string audit has no matches. |
+
+### Race rules and deterministic timing
+
+Four separate pre-line slots remain stationary for all **180** countdown ticks; GO leaves elapsed time at zero and movement begins on the next tick. First crossing arms only. Quarter gates at 500/1000/1500/2000 m must be swept forward in order. Each next station is anchored to the previous accepted station with a physical **84/60 m** displacement bound. Reverse, skipped/unanchored, duplicate/oscillating, nonfinite or discontinuous progress cannot earn laps or ranking credit. Faulted injected motion preserves the last lawful station until replay. Lateral grass position does not invalidate a lap; a grass finish and off-road recovery/full race are covered.
+
+All cars' crossing events are computed before results. Same-tick fixtures place the player's third finish at fraction **0.5** and an AI at **0.1**, **0.5**, or **0.9**, checking earlier/later ordering and stable identity ties. Finishers rank ahead of unfinished cars. A real delayed-player scenario finishes fourth after all three AI; another full race finishes first and repeats its entire state exactly. Three completed laps stop player progress and freeze the world/results, including repeated attempted inputs. Replay reconstructs clocks, grid, AI memory, gates and contact state.
+
+Pure real-physics player-first run (tick units retain full precision):
+
+| Value | Active ticks | Seconds |
+| --- | --- | --- |
+| Lap 1, including grid travel | 1708.0630148270031 | 28.467716914 |
+| Lap 2 | 1567.8463563196535 | 26.130772605 |
+| Lap 3 / race best | 1567.3681899288822 | 26.122803165 |
+| Total / finish | 4843.277561075539 | 80.721292685 |
+
+Lap durations sum exactly to the finish timestamp. Full 100 s tick-indexed schedules at **30/60/120/144 Hz** yield exactly equal race snapshots, clocks, standings, car/AI states, events and results. Pause tests preserve countdown/racing phase and all clocks; browser tests exercise P/Escape/Enter, blur, held-input cleanup, and a 5 s exceptional gap without simulation/timing jumps.
+
+The bounded browser race uses a test-only reference driver reduced to ordinary W/S/A/D states and an injected animation wrapper that dispatches standard keyboard events. It neither edits simulation state nor exposes an application test API; no fixture/driver is bundled in production. The browser asserts exact total/best time strings against the reference, stable results, then Enter replay with stopped grid, lap 1/3, zero clock and no old best. Separate genuine keyboard tests retain all aliases, simultaneous steering/throttle, braking/coasting and both-verge recovery. Runtime request/console audit on development and preview finds no external HTTP requests, console errors or uncaught errors.
+
+### Manual race and resolved test issues
+
+Native Chrome completed a three-lap race through actual controls at the documented origin. The HUD advanced to **2/3 at 2397 m**, then **3/3 at 4016 m**, and the third finish immediately showed **4/4**, **6:31.129 total**, **2:00.619 best**. Foreground coasting and off-road slowdowns account for this deliberately slow run; it is functional acceptance, not a performance or competitive-lap measurement. The game continued after surface departures and the chase view/clock/position/best values remained readable. Throttle at results did not alter the frozen screen. Enter replay reset station to **−8 m**, speed **0**, lap **1/3**, lap clock **0:00.000**, and best **—**. P paused the replay countdown; explicit resume returned to the preserved **3**. Final static preview also passed native menu/Enter/countdown/pause review.
+
+Resolved browser-fixture issues: countdown was added to prior driving setup; paused HUD sampling now waits a render; new two-row grid occlusion is handled by observing distinct palettes over visible approach frames; the field is paused before leaving view. The isolated-verge test now lets adjacent grid traffic pass before comparing slowdown, since side contact can legitimately delay departure. The full-race test clock is frozen before activation so real time between automation calls cannot shift a tick-indexed steering schedule. Both affected expensive/scenario tests repeat twice, and the final full suites pass on dev/preview. No handling/AI tuning or production fixture was needed. Existing NO_COLOR/FORCE_COLOR warnings are benign.
+
+No M4 blocker remains. Native multiple non-modifier key holding is unavailable, supplemented by real simultaneous-key Playwright coverage. Personal-record persistence/final UI, audio, full-release compatibility/performance remain M5–M7. The earlier M1 development-only minimatch findings remain recorded below and were not re-audited. Stop after M4 and leave changes for review/commit.
+
 ## M3 — 2026-10-31
 
 **Status: complete.** M2 prerequisite evidence was read before implementation. Only M3 was implemented; M4–M7 remain pending. Initial worktree was clean; no commits/staging/push or other version-control mutations occurred. `SPEC.md`, dependencies and lockfile are unchanged.
