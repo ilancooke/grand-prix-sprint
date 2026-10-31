@@ -33,12 +33,12 @@
 
 ## Build and test commands
 
-Tooling exists from M1: use Node.js 24 LTS and npm 11; tested Node 24.18.0 / npm 11.16.0 on macOS ARM64. Exact dependency versions are pinned in `package.json` and the lockfile; `.nvmrc` records Node. `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` pass. Installation and `npm ci` were verified offline using the ignored `.npm-cache` after permitted registry downloads. Ordinary network installation could not be verified because this sandbox denies npm DNS. Dev/preview and browser tests are implemented but blocked here by `listen EPERM 127.0.0.1:5173`; do not claim them passing. See `VERIFICATION.md` for exact evidence and resume M1.
+M1 is complete: use Node.js 24 LTS and npm 11; tested Node 24.18.0 / npm 11.16.0 on macOS ARM64. Exact dependency versions are pinned in `package.json` and the lockfile; `.nvmrc` records Node. Standard `npm ci`, typecheck, lint, 23 logic tests, build, dev/preview, 4 Chromium tests on both servers, 3 compatibility smoke tests, and local-origin manual driving review pass. Earlier default-sandbox port/DNS failures were resolved through permitted execution with unchanged project commands. npm reports 11 moderate development-tool findings from one minimatch advisory; production-only audit has zero findings. See `VERIFICATION.md` for evidence. The next authorized session selects M2; do not start it during the M1 closeout.
 
 | Command | Intended use |
 | --- | --- |
 | `npm install` | Install declared dependencies and update the lockfile; M1 bootstrap verified with `--offline --cache .npm-cache --no-audit --no-fund`. |
-| `npm ci` | Reproducible setup; verified here with `--offline --cache .npm-cache --no-audit --no-fund`. |
+| `npm ci` | Reproducible setup; standard command and offline cache setup verified. |
 | `npm run dev` | Start local Vite development server. |
 | `npm run typecheck` | Run TypeScript checking without emission. |
 | `npm run lint` | Run the minimal ESLint correctness checks. |

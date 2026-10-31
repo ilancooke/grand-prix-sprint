@@ -2,7 +2,7 @@
 
 An original desktop-browser arcade racer, built incrementally against the frozen [specification](SPEC.md).
 
-The current **M1 driving slice** contains a looping pseudo-3D chase view, an open-wheel player car, keyboard driving, speed/distance displays, and safe pause/resume. M1 verification is **in progress**: logic/build checks pass, but this implementation environment blocks local-server binding and therefore the configured browser tests. See [PROGRESS.md](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md).
+The current **M1 driving slice** contains a looping pseudo-3D chase view, an open-wheel player car, keyboard driving, speed/distance displays, and safe pause/resume. M1 is **complete**: setup, logic/build checks, Chromium tests on development and production preview, compatibility smoke tests, and local-origin manual driving review pass. See [PROGRESS.md](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md).
 
 ## Setup and launch
 
@@ -47,14 +47,14 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Playwright starts the local development server automatically, or reuses an existing server outside CI. The suite covers Start/Enter, combined input, braking, pause, focus cleanup, resize, and exceptional stalls. Browser binaries are development-only downloads.
+Playwright starts the local development server automatically, or reuses an existing server outside CI. The suite covers Start/Enter, every driving alias, visible steering while accelerating, coasting/braking, pause, focus cleanup, resize, exceptional stalls, and local-only requests without console errors. To check the static bundle, start `npm run preview` after building and run `npm run test:e2e` in another terminal; Playwright reuses that server outside CI. Browser binaries are development-only downloads.
 
 ```sh
 npx playwright install firefox webkit
 npm run test:e2e:compat
 ```
 
-Compatibility smoke projects are configured for Chromium, Firefox, and WebKit; their execution remains unverified in this sandbox. A local server must be permitted to listen on port 5173. Installation and binding errors here are detailed in [VERIFICATION.md](VERIFICATION.md), separate from passing checks.
+The current driving-slice compatibility smoke check passes in Chromium, Firefox, and WebKit. Full-release compatibility remains M7 work. A local server must be permitted to listen on port 5173; restricted environments may require permitted execution for setup, server startup, and browser tests. See [VERIFICATION.md](VERIFICATION.md) for results and earlier resolved environment limits.
 
 For manual M1 verification, drive at least one 1500 m loop, inspect both curve directions and moving roadside details, try every control alias and simultaneous acceleration/steering, brake to a stop, coast, pause/resume, resize, and switch tabs while driving. Confirm returning leaves the game paused and preserves position.
 

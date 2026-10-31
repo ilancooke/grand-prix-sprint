@@ -2,7 +2,7 @@
 
 ## Current slice
 
-M1 is implemented with verification still in progress. `SPEC.md` is unchanged. M2–M7 remain pending; the application currently presents free driving rather than unimplemented race controls.
+M1 is complete with automated and local-origin manual acceptance verified. `SPEC.md` is unchanged. M2–M7 remain pending; the application currently presents free driving rather than unimplemented race controls.
 
 - `src/game/` uses read-only state, explicit input, and fixed timestep arguments; no browser, clock, rendering, storage, or audio APIs. ESLint restricts those dependencies.
 - `src/platform/loop.ts` accumulates foreground milliseconds into 60 Hz ticks. A gap over 250 ms interrupts before advancing; pause clears both remainder and baseline. Equal tick-indexed inputs produce exactly equal states at 30/60/120/144 Hz in tests.
@@ -12,8 +12,8 @@ M1 is implemented with verification still in progress. `SPEC.md` is unchanged. M
 - Provisional handling: acceleration 18 m/s², maximum 84 m/s (302.4 km/h), brake 38 m/s², coasting drag 5 m/s². Steering grows with speed then saturates; a ±12 m verge clamp keeps the slice recoverable. M2 owns corner load, grip, off-road drag, and physical contacts.
 - System fonts and all player/scenery graphics are original procedural code. No external assets, fonts, audio, telemetry, APIs, runtime CDN, or third-party media licenses are required. Audio is deferred to M6.
 
-## Verification limits
+## Verification and limits
 
-Logic, static checks, reproducible offline installation, and the static build pass. Native Firefox 156.0.1 review of a temporary inline copy of the production bundle established basic driving, a full loop, pause, focus return, and desktop resize readability. That temporary review file is outside the project and is not a supported launch path or substitute for the local-origin browser suite.
+Standard `npm ci`, typecheck, lint, 23 logic tests, and the static build pass. Four Chromium browser tests pass on both the development server and production preview; compatibility smoke passes in Chromium, Firefox, and WebKit. The stronger browser suite checks rendered steering with simultaneous throttle for every alias without exposing game internals. Native Chrome 156.0.8078.74 review on `http://127.0.0.1:5173` verified full-loop motion, steering/braking/coasting, P/Escape, tab-return pause, and readable menu/HUD/pause at 960×720. See `VERIFICATION.md` for exact evidence.
 
-This sandbox denies server binding (`listen EPERM 127.0.0.1:5173`) and npm/browser-download DNS. Registry metadata and integrity-checked package tarballs were acquired with permitted downloads into an ignored local cache; `npm install` and `npm ci` then succeeded offline. No cache helper, fixture, or test-only global is shipped. Chromium archive acquisition succeeded separately, but standard Playwright installation and browser-suite execution remain blocked/unverified. See `VERIFICATION.md` and resume M1 before M2.
+The earlier sandbox bind/download failures are resolved through permitted execution using unchanged project commands. No application workaround, fixture, or test-only global is shipped. npm reports a moderate minimatch glob-processing advisory through 11 development-tool packages; `npm audit --omit=dev` reports zero findings. Versions remain pinned; review a compatible lint dependency fix when available. No M1 acceptance blocker remains. Final handling/collision feel, AI, full races, storage, audio, and measured release performance remain M2–M7 work. Stop after M1 in this session.

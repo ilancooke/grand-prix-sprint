@@ -2,7 +2,7 @@
 
 ## Status and source of truth
 
-This document preserves the architecture plan and its assumptions. M1 now has source code, pinned local tooling, a playable free-driving slice, and logic/build evidence; required local-origin browser verification remains unfinished. `PROGRESS.md` is the authoritative completion ledger. Later components below remain planned until their milestones are verified.
+This document preserves the architecture plan and its assumptions. M1 now has source code, pinned local tooling, a playable free-driving slice, and passing logic/build/local-origin browser and manual verification. Its acceptance evidence is recorded in `VERIFICATION.md`. `PROGRESS.md` is the authoritative completion ledger. Later components below remain planned until their milestones are verified.
 
 `SPEC.md`, titled **Grand Prix Sprint — Game Specification**, version 1.0, is the authoritative, frozen specification. Do not edit or replace it.
 
