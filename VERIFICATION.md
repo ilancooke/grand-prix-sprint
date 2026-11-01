@@ -1,10 +1,29 @@
 # Verification evidence
 
-## M7 — 2026-11-01 (in progress)
+## M7 — 2026-11-01 (complete)
 
 M1–M6 prerequisites are complete. Only M7 release verification is selected. The worktree was initially clean. No commits, staging, pushes, deployment or changes to the frozen specification, gameplay, art, audio, dependency versions or lockfile. New files are development-only release tests, listener observation and a real-time profiler; `package.json` adds only the profiler command.
 
-**Required evidence still pending:** The user answered **“I can’t review now; record it as pending”** for the final uninterrupted manual race/recovery/replay/reload and representative desktop performance review. M4's native complete race, M2/M3 driving/contact review, and M6's user-confirmed listening/visual evidence remain valid historical evidence; they do not replace M7's explicitly required final manual run. Safari is unavailable on this Linux host; record a Safari manual check when available (conditional, not an invented release requirement).
+**Final acceptance:** The user subsequently confirmed **“I did a final manual playthrough. all was fine”** in response to the outstanding race/results/replay/reload, braking/recovery and interruption checklist, and supplied the visible, manually driven physical-desktop profile below. This supersedes the earlier request to leave those checks pending. Manual acceptance is user-reported; no new agent-observed playthrough is claimed. M2–M6 historical driving, visual and user-confirmed listening evidence remains intact. All M7 acceptance criteria and all ten Definition of Done actions now have evidence. Safari manual testing is not reported; it remains conditional when available and is not a release blocker.
+
+### Final manual and representative desktop acceptance
+
+User ran `npm run profile` and drove a complete race at **http://127.0.0.1:5173**. Report timestamp **2026-11-01T17:11:29.756Z**; macOS (`darwin`) ARM64, **Apple M4**, **10 logical CPUs**, **24 GiB RAM**, visible Chromium **156.0.8078.4**, **1280×800 / DPR 1**, `headless: false`, `automatic: false`, `complete: true`. The user confirmed the final manual playthrough passed without issues. Physical display refresh rate and whether this particular server was dev or static preview were not supplied; earlier static-preview verification remains applicable because no application code changed. Callback pacing does not measure physical presentation or input latency.
+
+| Measurement (milliseconds) | Samples | Mean | p50 | p95 | p99 | Maximum |
+| --- | --- | --- | --- | --- | --- | --- |
+| Active-racing frame interval | 4,937 | 16.666802 | 16.7 | 17.6 | 17.7 | 17.8 |
+| Whole application callback | 4,938 | 1.488335 | 1.5 | 2.0 | 2.299999 | 4.400000 |
+
+Mean **59.999514 fps** (approximately **60 fps**), **zero interruptions**, **zero long tasks**, **zero gaps over 25/50/250 ms**, **no errors**, **no external requests**. Results: **2nd / 4**, total **1:22.286**, race best **0:24.157**, personal best **0:24.157**. This physical-desktop run meets the documented smoothness target with no recurring stall; no optimization or gameplay tuning is justified by this evidence. Only rounded aggregate metrics and supplied metadata are transcribed here; the user's raw samples were not available in this workspace.
+
+Closeout changes are documentation only. Previously passing release commands below were not rerun because source, tests, tooling and dependencies are unchanged. No required release evidence remains outstanding.
+
+| Closeout check | Executed result |
+| --- | --- |
+| `git diff --check` | Pass, exit 0; no whitespace errors. |
+| Inline `python3` documentation consistency check | Pass, exit 0: M1–M7 complete; 67/67 roadmap/verification references match; all ten DoD rows present; no pending current M7 dispositions; seven documentation files changed; specification and code unchanged. |
+| `git diff --stat` and documentation diff review | Exactly the seven handoff documents changed; no production, test, dependency or lockfile changes. |
 
 ### Environment and method
 
@@ -49,7 +68,7 @@ Isolated static preview, Chromium **156.0.8078.4**, headless Linux x64 QEMU mach
 
 Mean pacing **60.002 fps** across approximately **230.69 s** of recorded active-racing intervals. **Zero** intervals over 25/50/250 ms, **zero** observed long tasks and **zero** interruptions. The player reached real three-lap results with **3:50.708** authoritative total / **1:03.128** best; headless full throttle is deliberately slower than the controlled racing regression. No runtime/console errors or external HTTP requests. No recurring simulation/render stall appeared in this isolated workload, so no production optimization or handling/timing change was justified.
 
-This is useful headless VM callback/pacing evidence, **not representative physical desktop acceptance**. It does not measure physical frame presentation, input latency, human braking/recovery feel or listening. A named physical desktop, display refresh rate and uninterrupted manual run/report remain required. Default visible `npm run profile` mode is implemented/typechecked but not manually exercised on this display-less host. All automated release checks pass; **M7 remains in progress** solely for the documented manual/representative evidence. Preview and the disposable browser/audio container are stopped at handoff.
+This is supplemental headless VM callback/pacing evidence, **not representative physical desktop acceptance**. It does not measure physical frame presentation, input latency, human braking/recovery feel or listening. The user's visible Apple M4 run and manual confirmation above provide final desktop acceptance, including exercising default `npm run profile`. Preview and the disposable browser/audio container were stopped at the earlier automated-verification handoff.
 
 **Resolved verification issues:** The first development suite passed the sixteen existing checks but failed the new stress timeout and replay fixture. The stress test now has a 90 s budget for VM rendering. Replay installs the fake clock before the keyboard animation wrapper, matching the existing complete-race fixture; otherwise the clock replaced that wrapper and left the player stationary. The listener observer now attributes registrations to application module/bundle stacks, excluding late Playwright/Vite blur listeners. An initially overlapping compatibility command lost its reused managed server when the primary command shut it down; all subsequent suites run sequentially.
 
@@ -63,11 +82,11 @@ New release coverage:
 
 ### Specification reconciliation
 
-Every row of the frozen-spec mapping in `ROADMAP.md` is reconciled here. **Automated pass** below means the implemented requirement has executed logic/browser evidence, supplemented by the specified historical manual/visual/listening evidence. **Manual pending** identifies the remaining M7 acceptance, not a known gameplay failure. Source/test filenames are relative to the repository. Release command totals must also pass before closeout.
+Every row of the frozen-spec mapping in `ROADMAP.md` is reconciled here. **Automated pass** means the implemented requirement has executed logic/browser evidence, supplemented by historical manual/visual/listening evidence. **Manual pass** refers to the user's final playthrough confirmation above; **desktop performance pass** refers to the supplied visible Apple M4 profile. All 67 rows and ten Definition of Done actions have passing evidence. Source/test filenames are relative to the repository; release command results are recorded above.
 
 | Spec reference | Evidence and release disposition |
 | --- | --- |
-| §1 | Complete keyboard race, `race.spec.ts`, three-race replay stress; original Canvas/AI/audio source and M6 visual/listening review. Final compact-title driving feel: **manual pending**. |
+| §1 | Complete keyboard race, `race.spec.ts`, three-race replay stress; original Canvas/AI/audio source and M6 visual/listening review. Final compact-title driving feel: **manual pass**. |
 | §2.1–2.3 | `track-projection.test.ts`, `render-loop.test.ts`; M2 full-loop and M6 seven circuit scenes confirm chase/depth/curves/motion. |
 | §2.4 | `render/art.ts`; M6 player wheels/body/rear-wing scene review. |
 | §2.5 | `smoke.spec.ts` distinct moving palette test, three explicit opponent palettes; M3/M6 silhouette review. |
@@ -85,9 +104,9 @@ Every row of the frozen-spec mapping in `ROADMAP.md` is reconciled here. **Autom
 | §4 table: steering | `input.test.ts`, speed-sensitive motion, browser asphalt displacement for A/D/Left/Right. |
 | §4 table: pause | `race.test.ts`, countdown browser test, P/Escape and twelve-cycle stress. |
 | §4 table: confirm | Focused Start/Resume/Replay/Enter browser tests; mute focused Enter retains native action. |
-| §4 closing paragraphs | Held-key combined steering/throttle browser checks; integrated timing stress. Representative sustained responsiveness: **manual/performance pending**. |
+| §4 closing paragraphs | Held-key combined steering/throttle browser checks; integrated timing stress. Representative sustained responsiveness: **manual pass; desktop performance pass**. |
 | §5.1–5.3 | `vehicle.test.ts`: gradual acceleration/cap, drag, brake priority, speed-sensitive steering. |
-| §5.4 and closing paragraphs | `handling.test.ts` braked Anchor faster/cleaner than full throttle, speed-squared load; M2 native corner review. Final manual feel pending. |
+| §5.4 and closing paragraphs | `handling.test.ts` braked Anchor faster/cleaner than full throttle, speed-squared load; M2 native corner review. Final feel: user-confirmed manual pass. |
 | §5.5 | `handling.test.ts`, browser both-verge slowdown/rejoin. |
 | §5.6 | `collisions.test.ts`, `traffic.test.ts`, off-road full-race integration; M2 native obstacle/barrier recovery. |
 | §5.7 | Bounded entry losses, physical separation/seam/sweep/pileup tests; M2/M3 native contact review and M6 impact listening. |
@@ -113,31 +132,31 @@ Every row of the frozen-spec mapping in `ROADMAP.md` is reconciled here. **Autom
 | §9.4 | Exactly one fanfare in multi-tick finish; tone mapping and M6 user-confirmed listening. |
 | §9 closing paragraph | Gesture-only context creation, mute across phases, suspension/reuse, denial fallback, three-browser lifecycle tests. |
 | §10.1–10.4 | Supported clean Node/npm install; README dev/build/static preview; local-only request/console audit and no runtime packages/assets/services. |
-| §10.5 | Real-time diagnostic profiler provided. **Representative physical desktop distribution and responsiveness pending**; headless measurements are supplemental only. |
+| §10.5 | Real-time diagnostic profiler provided. **Desktop performance pass** on the visible Apple M4 run above; headless measurements are supplemental only. |
 | §10.6 | Exact complete-race snapshots/results at 30/60/120/144 Hz, fixed 60 Hz ticks and fractional crossings. |
-| §10.7 | Twelve-cycle interruption test, pure accumulator rebase and clock tests; native tab-switch review remains in final manual run. |
+| §10.7 | Twelve-cycle interruption test, pure accumulator rebase and clock tests; final manual checklist confirmed by the user. |
 | §10.8–10.9 | DOM-free `src/game/`, enforced lint import/global boundary, 134 logic tests plus browser integration. |
-| §10.10 | Source required-path audit has no TODO/FIXME/placeholder; automated menu→three laps→results→replay→reload. Final manual path pending. |
+| §10.10 | Source required-path audit has no TODO/FIXME/placeholder; automated menu→three laps→results→replay→reload. Final manual path: user-confirmed pass. |
 | §11.1–11.2 | All source/config/lockfile present; clean reproducible static build. |
 | §11.3 | README commands, supported majors, fixed origin and every key/alias; clean install/dev/preview exercised. |
 | §11.4 | Documented type/lint/logic/primary/compatibility commands, release stress and opt-in profiler. |
-| §11.5 | Complete automated game flow and earlier native playthrough; final release manual/performance acceptance pending. |
-| §11.6 | `IMPLEMENTATION_NOTES.md`: architecture, provenance, storage/audio/browser boundaries and explicit remaining acceptance. |
-| §12.1 | Clean install and documented dev/static launch exercised; final manual README pass pending. |
-| §12.2 | Pointer Start and focused Enter browser pass; earlier native menu acceptance; final manual pending. |
-| §12.3 | Real simultaneous-key controls, projection and full-race tests, M2/M6 visual/driving evidence; final manual pending. |
-| §12.4 | Exactly three functional opponents, long traffic and complete AI-first/player-first races; final manual pending. |
-| §12.5 | Braking comparison, off-road/contact recovery/seam fixtures and genuine keyboard smoke; final manual pending. |
-| §12.6 | Three ordered-gate circuits in pure/browser flow, three repeated full races; final manual pending. |
-| §12.7 | Exact authoritative results and fractional ordering tests; final manual pending. |
-| §12.8 | Three whole-race replays with stable graph/listener counts; final manual pending. |
-| §12.9 | Actual valid record saved before finish/replay/reload in the same origin; final manual pending. |
+| §11.5 | Complete automated game flow and earlier native playthrough; user-confirmed final manual and desktop performance pass. |
+| §11.6 | `IMPLEMENTATION_NOTES.md`: architecture, provenance, storage/audio/browser boundaries and recorded acceptance and limitations. |
+| §12.1 | Clean install and documented dev/static launch exercised; final manual README pass confirmed by the user. |
+| §12.2 | Pointer Start and focused Enter browser pass; earlier native menu acceptance; final manual pass confirmed by the user. |
+| §12.3 | Real simultaneous-key controls, projection and full-race tests, M2/M6 visual/driving evidence; final manual pass confirmed by the user. |
+| §12.4 | Exactly three functional opponents, long traffic and complete AI-first/player-first races; final manual pass confirmed by the user. |
+| §12.5 | Braking comparison, off-road/contact recovery/seam fixtures and genuine keyboard smoke; final manual pass confirmed by the user. |
+| §12.6 | Three ordered-gate circuits in pure/browser flow, three repeated full races; final manual pass confirmed by the user. |
+| §12.7 | Exact authoritative results and fractional ordering tests; final manual pass confirmed by the user. |
+| §12.8 | Three whole-race replays with stable graph/listener counts; final manual pass confirmed by the user. |
+| §12.9 | Actual valid record saved before finish/replay/reload in the same origin; final manual pass confirmed by the user. |
 | §12.10 | Full documented static/logic/browser check results recorded in this section. |
 | §12 closing paragraph | No new gameplay feature, dependency, handling tuning, or scope expansion; verification and handoff only. |
 
-### Resume M7
+### Final handoff
 
-Complete the README manual release checklist and run `npm run profile` on a named representative desktop (record browser, viewport, refresh rate, distributions and feel). Record Safari manual results if available. Resolve any defects and rerun affected checks; mark M7 complete only when every acceptance criterion is verified. Do not invent M8 or claim all milestones complete while these required checks are pending.
+M1–M7 are complete. User-confirmed manual acceptance and the visible Apple M4 profile close the last M7 requirements. No known gameplay defect or required acceptance blocker remains. Known limitations: Safari manual results and physical display refresh rate were not supplied; no universal hardware or input-latency guarantee is made. The existing audit has 11 moderate development-only minimatch findings and zero production findings. Leave documentation changes for user review/commit and stop; no further milestone, deployment or publishing is required.
 
 ## M6 — 2026-10-31
 

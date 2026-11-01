@@ -2,7 +2,7 @@
 
 An original desktop-browser arcade racer, built incrementally against the frozen [specification](SPEC.md).
 
-The game runs a complete three-lap race on the 2000 m Harbor Loop against cyan Azure, yellow Gold, and purple Violet. A stationary grid and three-second countdown lead into validated laps, live standings, lap clocks, frozen results, and replay, with personal records retained across reloads and original synthesized racing sound. **M7 release verification is in progress**; the final manual race and representative desktop performance review remain pending. See [PROGRESS.md](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md) for evidence.
+The game runs a complete three-lap race on the 2000 m Harbor Loop against cyan Azure, yellow Gold, and purple Violet. A stationary grid and three-second countdown lead into validated laps, live standings, lap clocks, frozen results, and replay, with personal records retained across reloads and original synthesized racing sound. **M1–M7 are complete**, including the user-confirmed final manual playthrough and representative desktop performance review. See [PROGRESS.md](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md) for evidence.
 
 ## Setup and launch
 
@@ -91,4 +91,4 @@ For manual M5 review, inspect the menu, countdown, HUD, pause and results at 960
 
 For manual M6 review, listen from Start through the finish: 3/2/1/GO, rising engine pitch under acceleration and falling pitch under braking, a short impact sound at a barrier/tire stack, and the finish fanfare. Try mute during countdown/driving/results, pause or switch tabs, resume, and replay several times. Check that cues remain clear, pause stays silent and engines do not multiply. Review the start line, every corner and traffic at the documented desktop sizes.
 
-Final manual release/performance acceptance remains pending in M7. See [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) for current choices and limitations.
+Final manual acceptance passed. A visible, manually driven Apple M4 / 24 GiB race at 1280×800 averaged approximately 60 fps (frame p95 17.6 ms; application callback p95 2.0 ms), with no interruptions, long tasks, errors or external requests. Full conditions and evidence limits are recorded in [VERIFICATION.md](VERIFICATION.md). See [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) for current choices and limitations.

@@ -183,7 +183,7 @@ Implementation uses one milestone per session. `PROGRESS.md` is the completion l
 
 This checklist follows every section of the frozen `SPEC.md`. M1–M6 provide implementation and local verification; M7 verifies the integrated release for every row. Grouped rows explicitly list all requirements in that group.
 
-The [M7 reconciliation in VERIFICATION.md](VERIFICATION.md#specification-reconciliation) now records evidence/disposition for every one of the 67 rows below, including all ten Definition of Done actions. Final manual race and representative desktop performance evidence remain required; the ledger retains M7 `in progress` until those pass.
+The [M7 reconciliation in VERIFICATION.md](VERIFICATION.md#specification-reconciliation) now records evidence/disposition for every one of the 67 rows below, including all ten Definition of Done actions. Final manual acceptance is now user-confirmed, and a visible, manually driven Apple M4 profile meets the approximately 60 fps target. The ledger records M1–M7 `complete`; measured conditions and evidence limits are preserved in `VERIFICATION.md`.
 
 | Spec reference | Requirement coverage | Implementation / primary verification |
 | --- | --- | --- |
