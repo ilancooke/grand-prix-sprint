@@ -2,7 +2,7 @@
 
 ## Status and source of truth
 
-This document preserves the architecture plan and its assumptions. M1–M3 established pinned local tooling, the final circuit, meaningful handling, recoverable contacts and exactly three deterministic opponents. M4 adds the functional three-lap race, grid/countdown, legal clocks/standings, results and replay. M5 completes the readable UI and validated personal-record persistence; current verification status is in the ledger. Its acceptance evidence is recorded in `VERIFICATION.md`. `PROGRESS.md` is the authoritative completion ledger. Later components below remain planned until their milestones are verified.
+This document preserves the architecture plan and its assumptions. M1–M3 established pinned local tooling, the final circuit, meaningful handling, recoverable contacts and exactly three deterministic opponents. M4 adds the functional three-lap race, grid/countdown, legal clocks/standings, results and replay. M5 completes the readable UI and validated personal-record persistence. M6 adds finished procedural presentation and synthesized racing audio; current verification status is in the ledger. Acceptance evidence is recorded in `VERIFICATION.md`. `PROGRESS.md` is the authoritative completion ledger. Release verification remains M7.
 
 `SPEC.md`, titled **Grand Prix Sprint — Game Specification**, version 1.0, is the authoritative, frozen specification. Do not edit or replace it.
 
@@ -45,7 +45,7 @@ Keep the design as functions and small modules. Simulation receives explicit con
 
 ### Planned components and files
 
-These paths describe intended responsibilities. The M1–M5 subset now exists, including swept world/pair contacts, deterministic AI, race rules, complete UI and persistence. Audio and final art polish remain planned. Combine small neighboring modules if that keeps the code easier to follow.
+These paths describe implemented responsibilities through M6, including swept world/pair contacts, deterministic AI, race rules, complete UI, persistence and audio. Combine small neighboring modules if that keeps the code easier to follow.
 
 | Planned path | Responsibility |
 | --- | --- |
@@ -138,6 +138,12 @@ Use a modest logical canvas such as 960×540, letterboxed/scaled without stretch
 M5 implementation detail: `PersonalRecords` lives only in the platform adapter and is owned across replays by the controller. Each fixed-tick update synchronously consumes the race event list; only finite positive completed **player** lap durations can improve a record. Stored JSON at `grand-prix-sprint.personal-best` has `{ version: 1, bestLapMilliseconds }`, retaining fractional milliseconds (bounded by the safe numeric range). Unknown schemas and malformed values are ignored without deleting data. Storage acquisition, reads and writes are all caught; failures retain an improving session record and show “Saving unavailable”. The adapter re-reads before a new comparison to respect an already faster record from another tab; this is not a cross-tab locking protocol. No write occurs before a valid improvement.
 
 The UI populates records synchronously at initialization/phase changes as well as during rendering, so a reload does not depend on the first animation frame. Menu/results and a strip outside the Canvas label **Personal best** only when available; HUD/results label **Race best** separately. Ordinal positions and clocks are formatted in the UI from authoritative values. Start/resume/replay receive visible keyboard focus; native focused controls and links retain Enter activation. The layout is reviewed at 960×720, 1280×800 and 1920×1080. No simulation, AI or timing rules change in M5.
+
+M6 implementation detail: the controller owns one `RacingAudio` adapter across replays. A trusted Start/Enter/Resume/unmute invokes `AudioContext.resume()` synchronously in the gesture. Two persistent sawtooth/triangle oscillators feed a low-pass filter and conservative gain; speed maps to 48–240 Hz and 380–2280 Hz filter cutoff with smoothed changes. Short enveloped triangle notes accompany countdown/GO and the player's finish. Original deterministic filtered noise supplies player car/barrier/obstacle impact feedback, coalesced per tick with an 18-active-tick cooldown. AI-only impacts/finishes do not trigger player cues. All race signals and impacts are consumed synchronously after each actual fixed tick. A finish in a catch-up frame stops later callbacks from consuming the frozen event list again.
+
+Pause/focus/stall and mute cancel pending effects, zero gains and suspend the context. Explicit resume/unmute reuses the graph; unmute while paused cannot resume it. Replay clears effects/cooldown while retaining mute preference. Natural effect endings disconnect their nodes; application disposal stops engines, disconnects and closes the context. A request generation prevents late startup callbacks from reviving paused/disposed audio, and pending startup retains only the latest signal. Constructor/resume failure closes the graph and leaves gameplay running with a disabled “Sound unavailable” control. Test-only observers wrap real Web Audio solely under `tests/`.
+
+The finished artwork retains the original projection/palette/scenery and adds tire shoulder highlights for contrast. The shell now also fits available viewport height so the persistent mute control remains visible. No external media or font is introduced; all artwork and audio are procedural, with provenance in `IMPLEMENTATION_NOTES.md`. M6 does not change physics, AI, race clocks, storage schemas or product scope.
 
 ## Testing and verification
 

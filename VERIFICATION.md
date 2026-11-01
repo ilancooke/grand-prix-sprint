@@ -1,5 +1,19 @@
 # Verification evidence
 
+## M6 — 2026-10-31
+
+**Status: complete.** Only M6 implemented; M7 untouched. macOS ARM64, Node 24.18.0/npm 11.16.0, existing Playwright browsers; unchanged local origin http://127.0.0.1:5173. No dependency setup/download/audit repeated.
+
+Typecheck/lint and **134/134 logic tests** pass. `npm run build` passes: 24 modules, HTML **4.30 kB**, CSS **5.86 kB**, JS **35.60 kB**. Initial dev suites: **16/16 Chromium** (33.7 s), **9/9 compatibility** (12.9 s). Corrected finish-batch focused preview regression passes **1/1** (32.0 s). Three repeated Firefox lifecycle checks pass **3/3** (5.2 s). Final static preview: `npm run test:e2e -- --output=test-results/m6-final` **16/16 passed** (33.0 s); `npm run test:e2e:compat -- --output=test-results/m6-final-compat` **9/9 passed** (12.6 s). Final typecheck/lint and 134 tests pass (1.10 s).
+
+Audio tests cover lazy startup, speed/filter mapping, countdown/GO/player finish, player impact coalescing/cooldown, eight replays, disposal, late startup and denial. Test-only observers wrap real browser Web Audio; no production globals or fixtures. The full race checks exactly one finish fanfare in a multi-tick frame, exact clocks/results, replay and record retention. User explicitly confirmed **“Listening check passes”** for the requested engine/cue/mute/pause/replay review. Native computer-use access failed; no native listening or driving is claimed by the agent.
+
+Reviewed actual input-driven circuit captures at 0/360/800/1160/1610/1780/1998 m and desktop menu/HUD/pause/results captures at 960×720, 1280×800 and 1920×1080. Chase perspective, five bends, road/grass contrast, seam stripe, scenery, open wheels/body/wing and opponent palettes remain readable. Tire highlights and height-aware layout finish contrast and keep mute visible. All art/sound is original procedural code; no external media, fonts or license obligations added. Captures remain ignored under test-results/.
+
+Resolved verification issues: use float tolerance for browser oscillator frequencies and context suspension for silence (gain getters can retain their last rendered value). Removed an unreliable fixed-duration barrier assertion after successful runs and later approach inconsistency; player event/cooldown unit coverage and the user’s actual listening confirmation remain. Test driver holds steady throttle only on the final 15 m to batch finish ticks reproducibly. The controller now stops consuming events after results, preventing duplicate finish cues within catch-up batches.
+
+Final whitespace/frozen-file/core/production-boundary inspections pass. Preview stopped after review. No M6 blocker remains. No release-performance or M7 acceptance claimed; earlier development-only audit findings unchanged.
+
 ## M5 — 2026-10-31
 
 **Status: complete.** M4 and earlier prerequisites were read and verified complete. Only M5 was implemented; M6–M7 remain pending. Worktree initially clean; no commits/staging/push. `SPEC.md`, dependency pins and lockfile unchanged.

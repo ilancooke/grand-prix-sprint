@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { formatPosition, formatTicks } from '../../src/ui/hud';
 import { installKeyboardRace, keyboardRace, startKeyboardRace } from '../helpers/keyboard-race';
 import { PERSONAL_BEST_KEY } from '../../src/platform/storage';
+import { installAudioProbe, readAudioProbe } from '../helpers/audio-probe';
 
 test('countdown locks the grid and all clocks; pause/focus/stall preserve its phase', async ({ page }) => {
   await page.clock.install();
@@ -48,27 +49,46 @@ test('countdown locks the grid and all clocks; pause/focus/stall preserve its ph
 
 test('bounded keyboard race reaches frozen results and clean replay without a refresh', async ({ page }, testInfo) => {
   test.setTimeout(90000);
-  const { frames, state, firstLapFrames } = keyboardRace();
+  const { frames, state, firstLapFrames, sceneFrames } = keyboardRace();
   await page.clock.install();
   // A test-only animation wrapper sends normal keyboard events before each frame.
   // The application receives no state fixture, debug global, or alternate driver.
   await installKeyboardRace(page, frames);
+  await installAudioProbe(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   // Freeze before activation so real time between protocol calls cannot shift
   // the reference's first frame or any tick-indexed keyboard transition.
   await startKeyboardRace(page);
-  await page.clock.runFor(firstLapFrames * 16);
+  let capturedFrame = 0;
+  for (const scene of sceneFrames) {
+    await page.clock.runFor((scene.frame - capturedFrame) * 16);
+    await page.screenshot({ path: testInfo.outputPath(`circuit-${scene.stationMeters}m.png`) });
+    capturedFrame = scene.frame;
+  }
+  await page.clock.runFor((firstLapFrames - capturedFrame) * 16);
   await expect(page.locator('#lap')).toHaveText('2/3');
   await expect(page.locator('#results')).toBeHidden();
   const firstRecord = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), PERSONAL_BEST_KEY);
   expect(firstRecord.bestLapMilliseconds).toBe(state.progress[0]!.lapTicks[0]! * 1000 / 60);
-  await page.clock.runFor((frames.length - firstLapFrames) * 16 + 32);
+  await page.clock.runFor((frames.length - firstLapFrames - 4) * 16);
+  // Batch the final straight's ticks in one ordinary catch-up frame. Finishing
+  // mid-batch must not consume the frozen finish event more than once.
+  expect(frames.slice(-5).every((input) => input.accelerate === frames.at(-1)!.accelerate &&
+    input.brake === frames.at(-1)!.brake)).toBe(true);
+  await page.clock.fastForward(128);
   await expect(page.getByRole('heading', { name: 'RACE FINISHED' })).toBeVisible();
   await expect(page.locator('#final-position')).toHaveText(formatPosition(state.results!.position));
   await expect(page.locator('#total-time')).toHaveText(formatTicks(state.results!.totalTicks));
   await expect(page.locator('#result-best')).toHaveText(formatTicks(state.results!.bestLapTicks));
+  const audio = await readAudioProbe(page);
+  expect(audio.contexts).toBe(1);
+  expect(audio.cueHertz.filter((hertz) => hertz === 523.25)).toHaveLength(1);
+  audio.cueHertz.slice(-4).forEach((hertz, index) =>
+    expect(hertz).toBeCloseTo([523.25, 659.25, 783.99, 1046.5][index]!, 3));
+  await expect.poll(async () => (await readAudioProbe(page)).engineGain).toBeLessThan(0.001);
   for (const width of [960, 1280, 1920]) {
     await page.setViewportSize({ width, height: width === 960 ? 720 : width === 1280 ? 800 : 1080 });
     const fits = await page.evaluate(() => {
@@ -91,6 +111,10 @@ test('bounded keyboard race reaches frozen results and clean replay without a re
   await expect(page.locator('#best-lap')).toHaveText('—');
   await expect(page.locator('#lap')).toHaveText('1/3');
   await expect(page.locator('#speed')).toHaveText('0');
+  expect((await readAudioProbe(page)).contexts).toBe(1);
+  expect((await readAudioProbe(page)).liveNodes).toBeLessThanOrEqual(7); // one graph + current countdown cue
+  await page.getByRole('button', { name: 'Mute sound' }).click();
+  expect((await readAudioProbe(page)).liveNodes).toBe(5);
   const saved = await page.evaluate((key) => localStorage.getItem(key), PERSONAL_BEST_KEY);
   expect(JSON.parse(saved!).bestLapMilliseconds).toBe(state.results!.bestLapTicks * 1000 / 60);
   await expect(page.locator('#personal-best')).toHaveText(formatTicks(state.results!.bestLapTicks));

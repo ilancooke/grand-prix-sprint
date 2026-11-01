@@ -18,6 +18,7 @@ export function createScreens() {
   const startButton = element<HTMLButtonElement>('#start');
   const resumeButton = element<HTMLButtonElement>('#resume');
   const replayButton = element<HTMLButtonElement>('#replay');
+  const muteButton = element<HTMLButtonElement>('#mute');
   const fields = Object.fromEntries(['speed', 'distance', 'lap', 'position', 'lap-time', 'best-lap',
     'countdown-number', 'final-position', 'total-time', 'result-best', 'menu-best', 'personal-best', 'result-personal'].map((id) => [id, element(`#${id}`)]));
   const setText = (id: string, value: string): void => {
@@ -25,7 +26,13 @@ export function createScreens() {
     if (target && target.textContent !== value) target.textContent = value;
   };
   return {
-    canvas, startButton, resumeButton, replayButton,
+    canvas, startButton, resumeButton, replayButton, muteButton,
+    updateAudio(audio: { readonly muted: boolean; readonly available: boolean }): void {
+      const label = audio.available ? audio.muted ? 'Unmute sound' : 'Mute sound' : 'Sound unavailable';
+      if (muteButton.textContent !== label) muteButton.textContent = label;
+      muteButton.setAttribute('aria-pressed', String(audio.muted));
+      muteButton.disabled = !audio.available;
+    },
     show(phase: 'menu' | RaceState['status']['kind'], pauseReason: string): void {
       menu.hidden = phase !== 'menu';
       hud.hidden = phase === 'menu' || phase === 'results';

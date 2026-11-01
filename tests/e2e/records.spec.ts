@@ -27,6 +27,7 @@ test('first launch, schema failures, focused Enter and responsive menu/pause @co
       return panel.top >= game.top && panel.bottom <= game.bottom && document.documentElement.scrollWidth <= innerWidth;
     });
     expect(fits).toBe(true);
+    await expect(page.locator('#mute')).toBeInViewport({ ratio: 1 });
     await page.screenshot({ path: testInfo.outputPath(`menu-${viewport.width}.png`) });
   }
   await page.locator('#start').focus();

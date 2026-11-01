@@ -2,11 +2,11 @@
 
 ## Current handoff
 
-- **Phase:** M5 complete; session boundary reached. M6–M7 remain pending.
-- **Selected milestone:** M5 — Complete readable UI and persistent personal best. Dependency M4 and M1–M3 are complete.
-- **Next concrete step:** In a new authorized session select only M6: finish retro art/audio, gesture startup, mute and audio lifecycle verification. Do not begin M6 during M5 closeout.
-- **Implementation verification:** Typecheck, lint, 126 logic tests, build, 12 Chromium tests and 6 Chromium/Firefox/WebKit compatibility checks on development and static preview pass. Three repeated preview stall checks pass after freezing the test clock. UI captures reviewed at 960×720, 1280×800 and 1920×1080; native Chrome menu/Enter/countdown/driving/pause and final-preview checks pass. See `VERIFICATION.md`.
-- **Remaining issues:** No M5 acceptance blocker. Audio/final art polish and release/performance verification remain M6–M7. Browser-denied storage keeps a session personal best with a saving-unavailable indication; ordinary storage retains it through reload. Dependencies are unchanged; the prior 11 moderate development-only minimatch findings were not re-audited.
+- **Phase:** M6 complete; session boundary reached. M7 remains pending.
+- **Selected milestone:** M6 — Finished retro presentation and original racing audio. M1–M5 prerequisites complete.
+- **Next concrete step:** In a new authorized session select only M7 for integrated release verification. Do not begin it during M6 closeout.
+- **Implementation verification:** Typecheck/lint, 134 logic tests, build, final 16 Chromium and 9 compatibility checks on static preview pass. The focused multi-tick finish regression passes. User confirms the listening check passes. Final circuit/UI captures reviewed; see `VERIFICATION.md`.
+- **Remaining issues:** No M6 blocker or known product defect. Release/performance verification remains M7. Dependencies and frozen specification unchanged.
 
 ## Milestone status
 
@@ -19,7 +19,7 @@ This is the single completion ledger. Use `pending`, `in progress`, or `complete
 | M3 | Three functioning opponents and overtaking | complete | Three shared-physics profiles; repeated ten-traversal traffic run, passing/blocked/contact regressions; 61 logic tests, type/lint/build, 6 Chromium + 3 compatibility tests on dev/preview, native traffic review. |
 | M4 | Valid three-lap race, correct standings, pause, and replay | complete | Exact grid/countdown, anchored ordered gates, fractional clocks/finish order, results/replay; 87 logic tests, type/lint/build, 8 Chromium + 3 compatibility tests on dev/preview, native complete race and replay. |
 | M5 | Complete readable UI and persistent personal best | complete | Versioned validated player-lap records, session fallback, distinct race/personal labels and focused UI; 126 logic tests, type/lint/build, 12 Chromium + 6 compatibility checks on dev/preview, three-size visual/native review. |
-| M6 | Finished retro presentation and original racing audio | pending | No implementation or verification yet. |
+| M6 | Finished retro presentation and original racing audio | complete | Synthesized racing audio, gesture/mute/failure handling and cleanup; 134 logic tests, type/lint/build, 16 Chromium + 9 compatibility checks; circuit/UI capture review and user-confirmed listening pass. |
 | M7 | Integrated release verification and complete handoff | pending | No implementation or verification yet. |
 
 ## Session records
@@ -177,3 +177,20 @@ Finished menu/HUD/pause/results styling, contrasted timing panels, ordinal posit
 **Manual method / fixes / limits:** Native local-origin Chrome menu/keyboard start, countdown pause, resume, brief throttle/steer/brake and readable HUD/pause review, followed by final static-preview Start/Enter/P. Reviewed browser-generated actual menu/HUD/pause/results captures at all three desktop sizes and countdown at 1920×1080; no overlap/clipping found. Full race/reload/persistence uses real application inputs through a test-only keyboard wrapper; no native full race was required anew for M5 (M4 evidence retained). Native multi-key limitations remain supplemented by genuine simultaneous-key tests. Initial reload test exposed record rendering waiting for animation; synchronous phase initialization fixes it. Initial preview stall test sampled distance while its fake clock still advanced between protocol calls; freezing that test clock removes the one-meter observation race, with three repeats and full preview passing. A duplicate dev start while the managed suite owned port 5173 exited with port-in-use; the existing server was reused, with no origin or command workaround. No unresolved M5 failure or product scope change remains.
 
 **Next step:** Stop after M5; leave implementation and handoff for user review/commit. A new authorized session selects only M6. Do not start audio or further art work here.
+
+
+### 2026-10-31 — M6 presentation and audio
+
+**Selected milestone:** M6, with M1–M5 verified complete. **Result: complete.** Only M6 was implemented; no M7 work, commits, staging or pushes. Initial worktree clean; frozen specification, dependencies and lockfile unchanged.
+
+**Changes:** One lazy, gesture-created Web Audio graph with smoothed speed-dependent engine pitch/filter, countdown/GO signals, coalesced player impact noise and player-finish fanfare. Persistent accessible mute works across phases/replay; paused unmute remains suspended. Pause/focus/stall cancel effects and suspend audio. Replay resets cues/cooldown without duplicating engines; natural endings disconnect voices and disposal closes the graph. Delayed startup cannot revive paused/disposed sound; context creation/resume failure preserves gameplay with a visible unavailable control. A controller catch-up guard prevents repeated consumption of the frozen finish event. Original tire highlights improve wheel contrast; height-aware shell sizing keeps mute visible.
+
+**Changed modules:** New `src/platform/audio.ts`, `tests/unit/audio.test.ts`, `tests/e2e/audio.spec.ts`, `tests/helpers/audio-probe.ts`; controller, screens, HTML/CSS and car art; keyboard race/capture and menu layout checks. README, architecture, notes, verification, guidance and this ledger updated. All test observers/drivers remain under tests, outside the production bundle.
+
+**Evidence:** Eight audio unit cases cover event/speed mapping, player-only impact cooldown, mute/pause, eight repeated replays, natural/disposal cleanup, delayed startup and denial. Real Web Audio checks cover gesture startup, speed, mute/Enter, pause/focus, reuse, pre-start mute and constructor/resume failure. Complete race checks exact authoritative results, saved-before-finish/replay/reload records and exactly one finish fanfare during a multi-tick finish frame. Circuit scenes at 0/360/800/1160/1610/1780/1998 m cover the start, five bends and seam. UI captures cover 960×720, 1280×800, 1920×1080; visible mute and readable open-wheel silhouettes/surface/scenery reviewed. The user explicitly answered “Listening check passes” for engine response, countdown/start, collision/finish and mute/pause/replay sound quality. No tool-based hearing claim is made.
+
+**Verification fixes/limits:** Browser AudioParam values require float tolerance; a suspended context may retain its last rendered gain value, so browser silence checks assert suspension plus disconnected effects. A fixed-duration browser barrier approach was inconsistent across browsers; this redundant assertion was removed, retaining pure event/cooldown coverage, earlier successful actual-impact runs and the user’s listening review. Final-straight test input now holds throttle for 15 m so the finish can be deliberately batched without changing its reference schedule. Native Chrome access failed (computer-use pipe unavailable); browser scene review and the user’s manual listening check supply M6 evidence. No external asset, new product assumption or physics/AI/storage change.
+
+**Final commands/results:** `npm run typecheck`, `npm run lint`, `npm test` (**134/134**, 15 files, 1.10 s), and `npm run build` pass. Bundle: 24 modules, HTML **4.30 kB**, CSS **5.86 kB**, JS **35.60 kB**. `npm run test:e2e -- --output=test-results/m6-final` passes **16/16** (33.0 s) against static preview; `npm run test:e2e:compat -- --output=test-results/m6-final-compat` passes **9/9** (12.6 s). Earlier dev suites passed 16/16 and 9/9; final affected regression also passes 1/1. `git diff --check` and frozen-file/core/production-boundary checks pass. Prior deterministic full-race render-rate and ten-traversal traffic tests remain passing. User listening review passes; browser captures reviewed. Setup/audit not repeated; preview stopped at handoff.
+
+**Remaining work / next step:** No M6 blocker remains. Stop here; leave changes ready for user review/commit. In a new authorized session select only M7 for release/performance, clean-install and final specification reconciliation. No M7 work was started.

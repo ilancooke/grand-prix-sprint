@@ -2,7 +2,7 @@
 
 An original desktop-browser arcade racer, built incrementally against the frozen [specification](SPEC.md).
 
-The current **M5 UI and records slice** runs a complete three-lap race on the 2000 m Harbor Loop against cyan Azure, yellow Gold, and purple Violet. A stationary grid and three-second countdown lead into validated laps, live standings, lap clocks, frozen results, and replay, with personal records retained across reloads. See [PROGRESS.md](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md) for milestone status and acceptance evidence.
+The current **M6 presentation and audio build** runs a complete three-lap race on the 2000 m Harbor Loop against cyan Azure, yellow Gold, and purple Violet. A stationary grid and three-second countdown lead into validated laps, live standings, lap clocks, frozen results, and replay, with personal records retained across reloads and original synthesized racing sound. See [PROGRESS.md](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md) for milestone status and acceptance evidence.
 
 ## Setup and launch
 
@@ -27,8 +27,11 @@ Open **http://127.0.0.1:5173** in a modern desktop browser. Click **Start Race**
 | D / Right | Steer right |
 | Escape / P | Pause or resume |
 | Enter | Start, replay, or activate the focused menu/resume control |
+| Mute sound / Unmute sound | Pointer or Tab then Enter; available below the view in every phase |
 
 Hold acceleration and steering together. Releasing acceleration slows the car. Focus loss, hidden tabs, or frame gaps above 250 ms pause immediately and clear held keys. Returning to the game requires explicit resume; time spent away is never simulated.
+
+Audio unlocks when you start or resume through a user interaction. Engine pitch and brightness rise with speed; short signals accompany 3/2/1, GO, player impacts and the finish. Mute is retained across replays for the current page session. Pause/focus loss silences the graph and clears effects; replay reuses one engine. If Web Audio is unavailable or startup is denied, **Sound unavailable** appears and driving continues.
 
 ## Build and checks
 
@@ -47,14 +50,14 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Playwright starts the local development server automatically, or reuses an existing server outside CI. The twelve-test suite covers Start/Enter, every driving alias, visible steering while accelerating, coasting/braking, both-verge slowdown and recovery, pause, focus cleanup, resize, exceptional stalls, three distinct moving opponents and their paused field, local-only requests without console errors, countdown immobility and interruption timing, and a bounded complete keyboard race with exact result times, fresh replay, saved records before race finish, slower-lap preservation, reload retention, corrupt storage, denied access/writes, and UI layout at three desktop sizes. The full-race driver lives only under `tests/` and sends ordinary keyboard events; no test fixture or debugging API ships in the game. To check the static bundle, start `npm run preview` after building and run `npm run test:e2e` in another terminal; Playwright reuses that server outside CI. Browser binaries are development-only downloads.
+Playwright starts the local development server automatically, or reuses an existing server outside CI. The sixteen-test suite covers Start/Enter, every driving alias, visible steering while accelerating, coasting/braking, both-verge slowdown and recovery, pause, focus cleanup, resize, exceptional stalls, three distinct moving opponents and their paused field, local-only requests without console errors, countdown immobility and interruption timing, and a bounded complete keyboard race with exact result times, fresh replay, saved records before race finish, slower-lap preservation, reload retention, corrupt storage, denied access/writes, and UI layout at three desktop sizes. Audio checks observe real Web Audio gesture startup, speed response, impact/finish signals, mute, cleanup and startup failures. The full-race driver and audio observer live only under `tests/`; no test fixture or debugging API ships in the game. To check the static bundle, start `npm run preview` after building and run `npm run test:e2e` in another terminal; Playwright reuses that server outside CI. Browser binaries are development-only downloads.
 
 ```sh
 npx playwright install firefox webkit
 npm run test:e2e:compat
 ```
 
-The six designated driving/UI/record-schema compatibility checks pass in Chromium, Firefox, and WebKit. Full-release compatibility remains M7 work. A local server must be permitted to listen on port 5173; restricted environments may require permitted execution for setup, server startup, and browser tests. See [VERIFICATION.md](VERIFICATION.md) for results and earlier resolved environment limits.
+The nine designated driving/UI/record-schema/audio compatibility checks cover Chromium, Firefox, and WebKit. Full-release compatibility remains M7 work. A local server must be permitted to listen on port 5173; restricted environments may require permitted execution for setup, server startup, and browser tests. See [VERIFICATION.md](VERIFICATION.md) for results and earlier resolved environment limits.
 
 For manual M2 verification, drive the full 2000 m loop through Lighthouse right, Anchor hairpin, Breakwater right, Pines left, and Home right. Brake at the Anchor approach markers: about **170–180 km/h** at its apex permits a clean turn with steering, while excessive speed overwhelms steering and carries the car wide. Grass reduces grip and speed; steer back with throttle to recover. The yellow/black tire stacks at **180 m left**, **660 m right**, and **1440 m left** are collidable. Trees, signs, and stands are decoration beyond the driving verge. Try both shoulders, barriers and tire stacks at low/high speed, then continue without reloading. Inspect the start line/scenery across the seam, resize, pause/resume, and switch tabs while driving.
 
@@ -70,4 +73,6 @@ All cars start just before the line. The first forward start crossing arms the c
 
 For manual M5 review, inspect the menu, countdown, HUD, pause and results at 960×720 and larger. Use Tab/Enter to activate focused controls; check every key alias. Complete one lap, reload on the same origin and confirm the personal record on the menu; finish/replay and check that race best resets while personal best remains.
 
-Audio and final art polish remain M6; release/performance acceptance remains M7. No audio is provided yet. See [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) for current choices and limitations. Stop at M5; no commits are created.
+For manual M6 review, listen from Start through the finish: 3/2/1/GO, rising engine pitch under acceleration and falling pitch under braking, a short impact sound at a barrier/tire stack, and the finish fanfare. Try mute during countdown/driving/results, pause or switch tabs, resume, and replay several times. Check that cues remain clear, pause stays silent and engines do not multiply. Review the start line, every corner and traffic at the documented desktop sizes.
+
+Release/performance acceptance remains M7. See [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) for current choices and limitations. Stop at M6; no commits are created.

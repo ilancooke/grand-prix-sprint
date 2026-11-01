@@ -10,15 +10,24 @@ export function keyboardRace() {
   let state = createRace();
   const frames: DrivingInput[] = [];
   let firstLapFrames = 0;
+  const sceneFrames: { readonly stationMeters: number; readonly frame: number }[] = [];
+  const sceneStations = [0, 360, 800, 1160, 1610, 1780, 1998];
   for (let frame = 0; frame < 8000 && state.status.kind !== 'results'; frame++) {
     const planned = state.status.kind === 'racing' ? driver(state) : IDLE_INPUT;
-    const input = { ...planned, steer: Math.abs(planned.steer) > 0.08 ? Math.sign(planned.steer) : 0 };
+    // Hold steady throttle for the last 15 m of the home straight so browser
+    // coverage can batch the finish ticks without changing the input schedule.
+    const input = state.status.kind === 'racing' && state.driving.player.stationMeters >= CIRCUIT.lengthMeters * 3 - 15
+      ? { ...IDLE_INPUT, accelerate: true }
+      : { ...planned, steer: Math.abs(planned.steer) > 0.08 ? Math.sign(planned.steer) : 0 };
     frames.push(input);
     clock.advance(frame * 16, () => { state = stepRace(state, input, CIRCUIT); });
+    const stationMeters = sceneStations[sceneFrames.length];
+    if (stationMeters !== undefined && state.driving.player.stationMeters >= stationMeters)
+      sceneFrames.push({ stationMeters, frame: frames.length });
     if (!firstLapFrames && state.progress[0]!.lapTicks.length > 0) firstLapFrames = frames.length;
   }
   expect(state.status.kind).toBe('results');
-  return { frames, state, firstLapFrames };
+  return { frames, state, firstLapFrames, sceneFrames };
 }
 
 export async function installKeyboardRace(page: Page, frames: DrivingInput[]): Promise<void> {
@@ -49,8 +58,8 @@ export async function installKeyboardRace(page: Page, frames: DrivingInput[]): P
 
 export async function startKeyboardRace(page: Page): Promise<void> {
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+  await page.getByRole('button', { name: 'Start Race' }).click();
   await page.evaluate(() => {
-    document.querySelector<HTMLButtonElement>('#start')!.click();
     window.dispatchEvent(new Event('test-keyboard-race'));
   });
 }

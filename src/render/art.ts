@@ -20,6 +20,12 @@ function drawCar(context: CanvasRenderingContext2D, steering: number, palette: t
   context.fillRect(40, -64, 29, 34);
   context.fillRect(-81, -17, 34, 44);
   context.fillRect(47, -17, 34, 44);
+  // Shoulder highlights keep exposed wheels readable against the asphalt.
+  context.fillStyle = '#3b4a55';
+  context.fillRect(-67, -61, 3, 26);
+  context.fillRect(61, -61, 3, 26);
+  context.fillRect(-78, -14, 4, 35);
+  context.fillRect(71, -14, 4, 35);
   context.fillStyle = '#657886';
   context.fillRect(-52, -45, 104, 6);
   context.fillRect(-60, 0, 120, 7);
