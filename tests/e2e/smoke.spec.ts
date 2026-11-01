@@ -58,6 +58,8 @@ test('focus loss clears held input and requires explicit resume', async ({ page 
 test('exceptional frame stall visibly pauses before integrating the gap', async ({ page }) => {
   await page.clock.install();
   await page.goto('/');
+  // Keep protocol/expectation latency out of the measured pre-stall station.
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
   await page.getByRole('button', { name: 'Start Race' }).click();
   await page.clock.runFor(3100);
   await page.keyboard.down('w');

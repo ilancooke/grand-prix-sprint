@@ -13,16 +13,17 @@
       <section class="game" aria-label="Grand Prix Sprint driving game">
         <canvas id="race-view" width="960" height="540" tabindex="-1" aria-label="Chase view of your open-wheel car on Harbor Loop"></canvas>
         <div id="hud" class="hud" hidden>
-          <div class="location"><span class="eyebrow">HARBOR LOOP</span><strong>LAP <output id="lap">1/3</output> · <output id="position">1/4</output></strong><div class="race-times"><span>LAP <output id="lap-time">0:00.000</output></span><span>BEST <output id="best-lap">—</output></span></div></div>
+          <div class="location"><span class="eyebrow">HARBOR LOOP</span><strong>LAP <output id="lap">1/3</output> · <output id="position" aria-label="Race position">1st / 4</output></strong><div class="race-times"><span>LAP <output id="lap-time">0:00.000</output></span><span>RACE BEST <output id="best-lap">—</output></span></div></div>
           <div class="telemetry"><div class="distance"><span class="eyebrow">DISTANCE</span><output id="distance">0</output><span class="unit">m</span></div><div class="speed"><output id="speed">0</output><span class="unit">km/h</span></div></div>
         </div>
         <div id="menu" class="overlay">
           <div class="panel">
             <p class="eyebrow">COASTAL CIRCUIT / 01</p>
             <h1>GRAND PRIX<br /><span>SPRINT</span></h1>
+            <p id="menu-record" class="record" hidden>PERSONAL BEST <output id="menu-best"></output></p>
             <p class="intro">Three rivals. One road.<br />Brake for Anchor. Find your opening.</p>
             <button id="start" type="button">Start Race <span aria-hidden="true">↗</span></button>
-            <p class="enter-hint">OR PRESS ENTER</p>
+            <p class="enter-hint"><kbd>Enter</kbd> START / CONFIRM</p>
             <div class="controls"><p><kbd>↑</kbd> <kbd>W</kbd> Accelerate <span><kbd>↓</kbd> <kbd>S</kbd> Brake</span></p><p><kbd>←</kbd> <kbd>A</kbd> Left <span><kbd>→</kbd> <kbd>D</kbd> Right</span></p><p><kbd>Esc</kbd> / <kbd>P</kbd> Pause &amp; resume</p></div>
             <p class="slice-note">Three opponents · 2000 m Harbor Loop · Three laps</p>
           </div>
@@ -30,15 +31,16 @@
         <div id="pause" class="overlay pause-overlay" hidden>
           <div class="panel pause-panel"><p class="eyebrow">TAKE A BREATHER</p><h2>PAUSED</h2><p id="pause-reason">Your drive is on hold.</p><button id="resume" type="button">Resume race <span aria-hidden="true">↗</span></button><p class="enter-hint">ENTER / ESC / P TO RESUME</p></div>
         </div>
-        <div id="countdown" class="countdown" hidden><span>GET READY</span><strong id="countdown-number">3</strong></div>
+        <div id="countdown" class="countdown" role="status" hidden><span>GET READY</span><strong id="countdown-number">3</strong></div>
         <div id="results" class="overlay pause-overlay" hidden>
           <div class="panel pause-panel"><p class="eyebrow">HARBOR LOOP / THREE LAPS</p><h2>RACE FINISHED</h2>
-            <p>POSITION <output id="final-position"></output></p><p>TOTAL <output id="total-time"></output></p><p>BEST LAP <output id="result-best"></output></p>
+            <dl class="result-times"><div><dt>FINISHING POSITION</dt><dd><output id="final-position"></output></dd></div><div><dt>TOTAL RACE TIME</dt><dd><output id="total-time"></output></dd></div><div><dt>RACE BEST LAP</dt><dd><output id="result-best"></output></dd></div><div id="result-record" hidden><dt>PERSONAL BEST</dt><dd><output id="result-personal"></output></dd></div></dl>
             <button id="replay" type="button">Race again <span aria-hidden="true">↗</span></button><p class="enter-hint">ENTER TO RACE AGAIN</p>
           </div>
         </div>
         <div id="drive-hint" class="drive-hint" hidden>↑ / W THROTTLE <span>↓ / S BRAKE</span><span>← → / A D STEER</span><span>ESC / P PAUSE</span></div>
       </section>
+      <div class="record-bar"><span id="personal-record" hidden>PERSONAL BEST <output id="personal-best">—</output></span><span id="saving-status" role="status">Records saved on this browser</span></div>
       <footer><span>ONE ROAD. FIND YOUR LINE.</span><span>ORIGINAL ARCADE DRIVING / LOCAL PLAY</span></footer>
     </main>
     <script type="module" src="/src/main.ts"></script>

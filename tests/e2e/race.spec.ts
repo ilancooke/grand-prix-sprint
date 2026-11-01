@@ -1,24 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { CIRCUIT } from '../../src/content/circuit';
-import { createRace, stepRace } from '../../src/game/race';
-import { IDLE_INPUT, type DrivingInput } from '../../src/game/types';
-import { FixedStepClock } from '../../src/platform/loop';
-import { formatTicks } from '../../src/ui/hud';
-import { driver } from '../helpers/race-driver';
-
-function keyboardRace() {
-  const clock = new FixedStepClock();
-  let state = createRace();
-  const frames: DrivingInput[] = [];
-  for (let frame = 0; frame < 8000 && state.status.kind !== 'results'; frame++) {
-    const planned = state.status.kind === 'racing' ? driver(state) : IDLE_INPUT;
-    const input = { ...planned, steer: Math.abs(planned.steer) > 0.08 ? Math.sign(planned.steer) : 0 };
-    frames.push(input);
-    clock.advance(frame * 16, () => { state = stepRace(state, input, CIRCUIT); });
-  }
-  expect(state.status.kind).toBe('results');
-  return { frames, state };
-}
+import { formatPosition, formatTicks } from '../../src/ui/hud';
+import { installKeyboardRace, keyboardRace, startKeyboardRace } from '../helpers/keyboard-race';
+import { PERSONAL_BEST_KEY } from '../../src/platform/storage';
 
 test('countdown locks the grid and all clocks; pause/focus/stall preserve its phase', async ({ page }) => {
   await page.clock.install();
@@ -63,50 +46,39 @@ test('countdown locks the grid and all clocks; pause/focus/stall preserve its ph
   await expect(page.locator('#lap-time')).toHaveText(time!);
 });
 
-test('bounded keyboard race reaches frozen results and clean replay without a refresh', async ({ page }) => {
+test('bounded keyboard race reaches frozen results and clean replay without a refresh', async ({ page }, testInfo) => {
   test.setTimeout(90000);
-  const { frames, state } = keyboardRace();
+  const { frames, state, firstLapFrames } = keyboardRace();
   await page.clock.install();
   // A test-only animation wrapper sends normal keyboard events before each frame.
   // The application receives no state fixture, debug global, or alternate driver.
-  await page.addInitScript((inputs) => {
-    const raf = window.requestAnimationFrame.bind(window);
-    let frame = -1;
-    const held = new Set<string>();
-    window.addEventListener('test-keyboard-race', () => { frame = 0; });
-    window.requestAnimationFrame = (callback) => raf((now) => {
-      if (frame >= 0) {
-        const input = inputs[frame++];
-        const desired = new Set<string>();
-        if (input?.accelerate) desired.add('KeyW');
-        if (input?.brake) desired.add('KeyS');
-        if (input && input.steer < 0) desired.add('KeyA');
-        if (input && input.steer > 0) desired.add('KeyD');
-        for (const code of held) if (!desired.has(code)) {
-          window.dispatchEvent(new KeyboardEvent('keyup', { code, bubbles: true })); held.delete(code);
-        }
-        for (const code of desired) if (!held.has(code)) {
-          window.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true })); held.add(code);
-        }
-      }
-      callback(now);
-    });
-  }, frames);
+  await installKeyboardRace(page, frames);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   // Freeze before activation so real time between protocol calls cannot shift
   // the reference's first frame or any tick-indexed keyboard transition.
-  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
-  await page.evaluate(() => {
-    document.querySelector<HTMLButtonElement>('#start')!.click();
-    window.dispatchEvent(new Event('test-keyboard-race'));
-  });
-  await page.clock.runFor(frames.length * 16 + 32);
+  await startKeyboardRace(page);
+  await page.clock.runFor(firstLapFrames * 16);
+  await expect(page.locator('#lap')).toHaveText('2/3');
+  await expect(page.locator('#results')).toBeHidden();
+  const firstRecord = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), PERSONAL_BEST_KEY);
+  expect(firstRecord.bestLapMilliseconds).toBe(state.progress[0]!.lapTicks[0]! * 1000 / 60);
+  await page.clock.runFor((frames.length - firstLapFrames) * 16 + 32);
   await expect(page.getByRole('heading', { name: 'RACE FINISHED' })).toBeVisible();
-  await expect(page.locator('#final-position')).toHaveText(`${state.results!.position}/4`);
+  await expect(page.locator('#final-position')).toHaveText(formatPosition(state.results!.position));
   await expect(page.locator('#total-time')).toHaveText(formatTicks(state.results!.totalTicks));
   await expect(page.locator('#result-best')).toHaveText(formatTicks(state.results!.bestLapTicks));
+  for (const width of [960, 1280, 1920]) {
+    await page.setViewportSize({ width, height: width === 960 ? 720 : width === 1280 ? 800 : 1080 });
+    const fits = await page.evaluate(() => {
+      const game = document.querySelector('.game')!.getBoundingClientRect();
+      const panel = document.querySelector('#results .panel')!.getBoundingClientRect();
+      return panel.top >= game.top && panel.bottom <= game.bottom;
+    });
+    expect(fits).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`results-${width}.png`) });
+  }
   const result = await page.locator('#results').textContent();
   await page.clock.runFor(10000);
   await expect(page.locator('#results')).toHaveText(result!);
@@ -119,5 +91,11 @@ test('bounded keyboard race reaches frozen results and clean replay without a re
   await expect(page.locator('#best-lap')).toHaveText('—');
   await expect(page.locator('#lap')).toHaveText('1/3');
   await expect(page.locator('#speed')).toHaveText('0');
+  const saved = await page.evaluate((key) => localStorage.getItem(key), PERSONAL_BEST_KEY);
+  expect(JSON.parse(saved!).bestLapMilliseconds).toBe(state.results!.bestLapTicks * 1000 / 60);
+  await expect(page.locator('#personal-best')).toHaveText(formatTicks(state.results!.bestLapTicks));
+  await page.reload();
+  await expect(page.locator('#menu-best')).toHaveText(formatTicks(state.results!.bestLapTicks));
+  expect(await page.evaluate((key) => localStorage.getItem(key), PERSONAL_BEST_KEY)).toBe(saved);
   expect(errors).toEqual([]);
 });

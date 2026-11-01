@@ -2,7 +2,7 @@
 
 ## Status and source of truth
 
-This document preserves the architecture plan and its assumptions. M1–M3 established pinned local tooling, the final circuit, meaningful handling, recoverable contacts and exactly three deterministic opponents. M4 adds the functional three-lap race, grid/countdown, legal clocks/standings, results and replay; its current verification status is in the ledger. Its acceptance evidence is recorded in `VERIFICATION.md`. `PROGRESS.md` is the authoritative completion ledger. Later components below remain planned until their milestones are verified.
+This document preserves the architecture plan and its assumptions. M1–M3 established pinned local tooling, the final circuit, meaningful handling, recoverable contacts and exactly three deterministic opponents. M4 adds the functional three-lap race, grid/countdown, legal clocks/standings, results and replay. M5 completes the readable UI and validated personal-record persistence; current verification status is in the ledger. Its acceptance evidence is recorded in `VERIFICATION.md`. `PROGRESS.md` is the authoritative completion ledger. Later components below remain planned until their milestones are verified.
 
 `SPEC.md`, titled **Grand Prix Sprint — Game Specification**, version 1.0, is the authoritative, frozen specification. Do not edit or replace it.
 
@@ -45,7 +45,7 @@ Keep the design as functions and small modules. Simulation receives explicit con
 
 ### Planned components and files
 
-These paths describe intended responsibilities. The M1–M4 subset now exists, including swept world/pair contacts, deterministic AI and race rules. Audio, persistence, and final UI polish remain planned. Combine small neighboring modules if that keeps the code easier to follow.
+These paths describe intended responsibilities. The M1–M5 subset now exists, including swept world/pair contacts, deterministic AI, race rules, complete UI and persistence. Audio and final art polish remain planned. Combine small neighboring modules if that keeps the code easier to follow.
 
 | Planned path | Responsibility |
 | --- | --- |
@@ -134,6 +134,10 @@ Use a modest logical canvas such as 960×540, letterboxed/scaled without stretch
 - Pause: visible overlay, no simulation or clock movement, explicit resume via Escape/P or a control. Prevent key-repeat from toggling repeatedly and prevent driving keys from scrolling the page when gameplay owns input.
 - Audio: initialize/resume the audio context from a Start/Enter/click user gesture. Modulate an oscillator/filter/gain from speed, schedule short original countdown/start and finish cues, and rate-limit impact/off-track feedback. Provide a visible keyboard-accessible mute control in all phases. Audio denial/failure must not block play. Suspend engine/effects during pause or focus loss; replay must not duplicate nodes or listeners.
 - Best lap: persist each newly improved valid completed player lap, including laps from an unfinished race. Version and validate finite positive milliseconds; ignore corrupt/unknown records and handle unavailable storage. Ordinary reload on the same origin retains the record. If the browser blocks storage, gameplay continues with a session record and a concise indication that saving is unavailable. Persistence cannot be guaranteed against browser policy or user-cleared site data.
+
+M5 implementation detail: `PersonalRecords` lives only in the platform adapter and is owned across replays by the controller. Each fixed-tick update synchronously consumes the race event list; only finite positive completed **player** lap durations can improve a record. Stored JSON at `grand-prix-sprint.personal-best` has `{ version: 1, bestLapMilliseconds }`, retaining fractional milliseconds (bounded by the safe numeric range). Unknown schemas and malformed values are ignored without deleting data. Storage acquisition, reads and writes are all caught; failures retain an improving session record and show “Saving unavailable”. The adapter re-reads before a new comparison to respect an already faster record from another tab; this is not a cross-tab locking protocol. No write occurs before a valid improvement.
+
+The UI populates records synchronously at initialization/phase changes as well as during rendering, so a reload does not depend on the first animation frame. Menu/results and a strip outside the Canvas label **Personal best** only when available; HUD/results label **Race best** separately. Ordinal positions and clocks are formatted in the UI from authoritative values. Start/resume/replay receive visible keyboard focus; native focused controls and links retain Enter activation. The layout is reviewed at 960×720, 1280×800 and 1920×1080. No simulation, AI or timing rules change in M5.
 
 ## Testing and verification
 

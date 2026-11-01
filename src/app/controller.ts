@@ -2,6 +2,7 @@ import { CIRCUIT } from '../content/circuit';
 import { createRace, pauseRace, resumeRace, stepRace } from '../game/race';
 import { bindKeyboard, HeldKeys } from '../platform/input';
 import { FixedStepClock } from '../platform/loop';
+import { PersonalRecords } from '../platform/storage';
 import { interpolateVehicle } from '../render/projection';
 import { render } from '../render/renderer';
 import { createScreens } from '../ui/screens';
@@ -10,6 +11,7 @@ export function startApplication(): () => void {
   const screens = createScreens();
   const context = screens.canvas.getContext('2d');
   if (!context) throw new Error('Canvas 2D is required to play Grand Prix Sprint.');
+  const records = new PersonalRecords();
   const keys = new HeldKeys();
   const clock = new FixedStepClock();
   let menu = true;
@@ -23,6 +25,7 @@ export function startApplication(): () => void {
     clock.reset();
     previous = state.driving;
     screens.show(menu ? 'menu' : state.status.kind, reason);
+    screens.update(state, records.snapshot());
   };
   const confirm = (): void => {
     if (document.hidden) return;
@@ -55,6 +58,7 @@ export function startApplication(): () => void {
         previous = state.driving;
         const kind = state.status.kind;
         state = stepRace(state, keys.snapshot(), CIRCUIT);
+        records.consume(state.events);
         if (kind !== state.status.kind) {
           // Do not reset the accumulator inside its tick callback. GO needs no
           // rebase; results stop further ticks and clear all held input.
@@ -72,7 +76,7 @@ export function startApplication(): () => void {
     render(context, CIRCUIT, interpolateVehicle(previous.player, state.driving.player, alpha), keys.snapshot().steer,
       state.driving.opponents.map((opponent, index) => ({ id: opponent.id, vehicle: interpolateVehicle(
         previous.opponents[index]?.vehicle ?? opponent.vehicle, opponent.vehicle, alpha) })));
-    screens.update(state);
+    screens.update(state, records.snapshot());
     animationHandle = requestAnimationFrame(frame);
   };
   refreshPhase();

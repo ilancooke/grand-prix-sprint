@@ -37,8 +37,8 @@ export function bindKeyboard(keys: HeldKeys, actions: KeyboardActions): () => vo
       if (actions.ownsDrivingInput()) event.preventDefault();
       if (!event.repeat) actions.pause();
     } else if (event.code === 'Enter' && !event.repeat) {
-      // Native button activation retains focus/Enter semantics.
-      if (!(event.target instanceof HTMLButtonElement)) {
+      // Native controls and links retain their focused Enter action.
+      if (!(event.target instanceof Element && event.target.closest('button, a, input, select, textarea'))) {
         event.preventDefault();
         actions.confirm();
       }

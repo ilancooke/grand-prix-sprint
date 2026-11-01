@@ -2,11 +2,11 @@
 
 ## Current handoff
 
-- **Phase:** M4 complete; session boundary reached. M5–M7 remain pending.
-- **Selected milestone:** M4 — Valid three-lap race, correct standings, pause, and replay. Dependencies M1–M3 are complete.
-- **Next concrete step:** In a new authorized session select M5: finish readable UI and add safe, validated personal-best persistence from completed player-lap events. Do not begin M5 during M4 closeout.
-- **Implementation verification:** Typecheck, lint, 87 logic tests, build, 8 Chromium tests on development and static preview, and 3 Chromium/Firefox/WebKit compatibility smoke tests on both pass. Full-race schedules match exactly at 30/60/120/144 Hz. Native Chrome completed three laps, reviewed frozen results and replay/countdown pause. See `VERIFICATION.md`.
-- **Remaining issues:** No M4 acceptance blocker. Personal-record persistence/final UI, audio and release/performance verification remain M5–M7. Dependencies are unchanged; the prior 11 moderate development-only minimatch findings were not re-audited.
+- **Phase:** M5 complete; session boundary reached. M6–M7 remain pending.
+- **Selected milestone:** M5 — Complete readable UI and persistent personal best. Dependency M4 and M1–M3 are complete.
+- **Next concrete step:** In a new authorized session select only M6: finish retro art/audio, gesture startup, mute and audio lifecycle verification. Do not begin M6 during M5 closeout.
+- **Implementation verification:** Typecheck, lint, 126 logic tests, build, 12 Chromium tests and 6 Chromium/Firefox/WebKit compatibility checks on development and static preview pass. Three repeated preview stall checks pass after freezing the test clock. UI captures reviewed at 960×720, 1280×800 and 1920×1080; native Chrome menu/Enter/countdown/driving/pause and final-preview checks pass. See `VERIFICATION.md`.
+- **Remaining issues:** No M5 acceptance blocker. Audio/final art polish and release/performance verification remain M6–M7. Browser-denied storage keeps a session personal best with a saving-unavailable indication; ordinary storage retains it through reload. Dependencies are unchanged; the prior 11 moderate development-only minimatch findings were not re-audited.
 
 ## Milestone status
 
@@ -18,7 +18,7 @@ This is the single completion ledger. Use `pending`, `in progress`, or `complete
 | M2 | Complete circuit, meaningful handling, and recoverable collisions | complete | Final 2000 m circuit; braking comparison, recovery/seam/sweep fixtures; 42 logic tests, typecheck/lint/build, 5 Chromium tests on dev/preview, 3 compatibility smoke tests, and native full-loop/contact review pass. |
 | M3 | Three functioning opponents and overtaking | complete | Three shared-physics profiles; repeated ten-traversal traffic run, passing/blocked/contact regressions; 61 logic tests, type/lint/build, 6 Chromium + 3 compatibility tests on dev/preview, native traffic review. |
 | M4 | Valid three-lap race, correct standings, pause, and replay | complete | Exact grid/countdown, anchored ordered gates, fractional clocks/finish order, results/replay; 87 logic tests, type/lint/build, 8 Chromium + 3 compatibility tests on dev/preview, native complete race and replay. |
-| M5 | Complete readable UI and persistent personal best | pending | No implementation or verification yet. |
+| M5 | Complete readable UI and persistent personal best | complete | Versioned validated player-lap records, session fallback, distinct race/personal labels and focused UI; 126 logic tests, type/lint/build, 12 Chromium + 6 compatibility checks on dev/preview, three-size visual/native review. |
 | M6 | Finished retro presentation and original racing audio | pending | No implementation or verification yet. |
 | M7 | Integrated release verification and complete handoff | pending | No implementation or verification yet. |
 
@@ -151,3 +151,29 @@ This is the single completion ledger. Use `pending`, `in progress`, or `complete
 **Resolved verification issues / assumptions:** Prior browser timing and view assumptions needed updating for the new grid/countdown. Paused HUD assertions now wait for the frozen render; palette checks sample visible traffic rather than requiring all three unobscured at one instant or after the field leaves view. The isolated-verge regression lets adjacent grid traffic pass before measuring slowdown. A full-race schedule occasionally diverged because real time advanced between startup protocol calls; freezing the test clock before activation fixes it, without production hooks. All affected checks pass after fixes. Malformed injected motion conservatively faults that car's legal progress until replay and cannot improve its last lawful rank; forward-only normal physics never enters that path. Finished AI continue physical circulation with no further lap credit until the player freezes the world. No product scope change or unresolved M4 failure remains.
 
 **Next step:** Stop at M4 and leave changes for user review/commit. In a new authorized session select M5; use valid completed player-lap events for safe personal-record persistence, keep race best distinct, and complete UI/readability/storage verification. No M5 implementation was added.
+
+
+### 2026-10-31 — M5 implemented and completed
+
+**Selected milestone:** M5; dependency M4 and all earlier milestones verified complete from the ledger. **Result: complete.** M6–M7 were not started. Initial worktree was clean. No commits, staging, push or other version-control mutations occurred. Frozen `SPEC.md`, package pins and lockfile are unchanged.
+
+**Changes:** Added `src/platform/storage.ts`, consuming only synchronous valid completed player-lap events. Version 1 JSON retains finite positive fractional milliseconds. Improved laps save immediately, including before results; slower/invalid/AI laps cannot replace a record. Missing/corrupt/unknown schemas are ignored. Getter/read/write exceptions keep an improving session record and show a concise saving-unavailable message. Re-reading before comparison respects an already faster record from another tab (no atomic cross-tab locking claim). Replay retains the adapter while recreating race state.
+
+Finished menu/HUD/pause/results styling, contrasted timing panels, ordinal positions, explicit RACE BEST/PERSONAL BEST labels, personal-record rows only when present, and a record/status strip outside the Canvas. Start/resume/replay have visible focus; native focused controls/links retain Enter behavior. UI initializes synchronously on phase changes, so a record is visible before the first animation frame. No motion, AI, race rules, timing constants, dependencies or art assets changed.
+
+**Changed modules:** `index.html`, controller, input adapter, screens/HUD/CSS; new storage adapter, unit storage/formatting tests and real-race persistence integration test. Extracted the existing test-only keyboard schedule into `tests/helpers/keyboard-race.ts`, extended complete-race browser assertions and added `tests/e2e/records.spec.ts`; stabilized the existing stall fixture. Updated README, architecture, guidance, notes and verification. No production test fixture/global was added.
+
+| M5 criterion | Completion evidence |
+| --- | --- |
+| Title, Start, every key/alias, personal best only when present | First-launch/schema/menu browser test, retained all-alias driving coverage, visible focus and native Enter start. Empty personal-record rows are hidden; saved menu record appears after reload. |
+| Readable HUD, countdown, pause/results and responsive desktop layout | Screenshots manually inspected at 960×720, 1280×800 and 1920×1080, plus native Chrome. Panels fit the game; speed/lap/ordinal position/clocks are clear, leaving road center/player visible during driving. |
+| Correct results/replay and focused Enter | Complete keyboard race compares exact authoritative position/total/race best; frozen results then Enter yields stopped fresh grid, zero clocks and no race best, while retaining personal best. Native Start/Resume focus and countdown pause reviewed. |
+| Improved valid lap persists before finish; slower/invalid laps ignored | Browser asserts stored first-lap duration while lap 2 is active/results hidden; slower-lap scenario retains prior 20 s record. Logic tests reject nonpositive/nonfinite/AI events and an actual faulted discontinuous gate attempt. |
+| Same-origin reload and replay retention | Real three-lap browser flow saves the best completed lap, checks it after replay, reloads and sees the same menu record. Runs on dev and final static preview at the documented origin. |
+| Safe missing/corrupt/unsupported/denied storage | Schema matrix, acquisition/read/write failure fixtures, browser malformed/version/value cases, denied getter and denied writes. Failed writes retain the actual completed lap as a session record; controls/pause/resume continue without errors. |
+
+**Final commands/results:** `npm run typecheck`, `npm run lint`, `npm test` (**126/126**, 14 files, 1.07 s), and `npm run build` pass. Output: 23 modules, HTML **4.23 kB**, CSS **5.56 kB**, JS **29.96 kB**. `npm run test:e2e`: **12/12** on dev (32.1 s) and final static preview (32.0 s). `npm run test:e2e:compat`: **6/6** Chromium/Firefox/WebKit driving/UI/schema checks on dev (9.7 s) and preview (9.6 s). `npm run test:e2e -- --grep 'exceptional frame stall' --repeat-each=3`: **3/3** preview (3.0 s). Typecheck/lint pass again after that fixture edit. All prior full-race 30/60/120/144 Hz and ten-traversal traffic regressions remain passing. Final whitespace/scope/core/production-fixture checks pass. Dev/preview servers stopped after review. Setup/download/audit not repeated because dependencies did not change.
+
+**Manual method / fixes / limits:** Native local-origin Chrome menu/keyboard start, countdown pause, resume, brief throttle/steer/brake and readable HUD/pause review, followed by final static-preview Start/Enter/P. Reviewed browser-generated actual menu/HUD/pause/results captures at all three desktop sizes and countdown at 1920×1080; no overlap/clipping found. Full race/reload/persistence uses real application inputs through a test-only keyboard wrapper; no native full race was required anew for M5 (M4 evidence retained). Native multi-key limitations remain supplemented by genuine simultaneous-key tests. Initial reload test exposed record rendering waiting for animation; synchronous phase initialization fixes it. Initial preview stall test sampled distance while its fake clock still advanced between protocol calls; freezing that test clock removes the one-meter observation race, with three repeats and full preview passing. A duplicate dev start while the managed suite owned port 5173 exited with port-in-use; the existing server was reused, with no origin or command workaround. No unresolved M5 failure or product scope change remains.
+
+**Next step:** Stop after M5; leave implementation and handoff for user review/commit. A new authorized session selects only M6. Do not start audio or further art work here.

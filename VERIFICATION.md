@@ -1,5 +1,43 @@
 # Verification evidence
 
+## M5 — 2026-10-31
+
+**Status: complete.** M4 and earlier prerequisites were read and verified complete. Only M5 was implemented; M6–M7 remain pending. Worktree initially clean; no commits/staging/push. `SPEC.md`, dependency pins and lockfile unchanged.
+
+Environment: macOS ARM64, Node **24.18.0**, npm **11.16.0**, existing Playwright **1.64.1** browsers. Documented origin **http://127.0.0.1:5173** on both dev and static preview. Desktop captures: **960×720**, **1280×800**, **1920×1080**. Native Chrome review used the existing local-origin window (same installed Chrome as M4). Commands requiring writes/server/browser access used permitted execution; setup/download/audit not repeated.
+
+| Exact command | Result |
+| --- | --- |
+| `npm test -- tests/unit/storage.test.ts tests/unit/hud.test.ts` | **38/38 passed**, initial affected logic checks. |
+| `npm run typecheck` | Passed final source/tests; repeated after stall-fixture edit. |
+| `npm run lint` | Passed final source/tests; repeated after stall-fixture edit. |
+| `npm test` | **126/126 passed**, 14 files, 1.07 s. Includes 39 new formatting/storage/event-integration cases and all prior deterministic simulation regressions. |
+| `npm run build` | Passed, 23 modules. HTML **4.23 kB**, CSS **5.56 kB**, JS **29.96 kB** (gzip 1.60 / 1.94 / 9.70 kB). |
+| `npm run dev` | Served documented origin for native UI/keyboard and automated checks; stopped before preview. One duplicate start while the managed test server owned the port exited port-in-use; reused that server without changing commands/origin. |
+| `npm run test:e2e` (final dev implementation) | **12/12 Chromium passed**, 32.1 s. |
+| `npm run test:e2e:compat` (dev) | **6/6 passed**, 9.7 s. Driving smoke plus menu/schema/focus/layout/seeded-record reload in Chromium/Firefox/WebKit. |
+| `npm run preview` | Served final static bundle at the documented origin; native menu/Enter/countdown/P passed. Stopped after review. |
+| `npm run test:e2e -- --grep 'exceptional frame stall' --repeat-each=3` (preview) | **3/3 passed**, 3.0 s, after freezing the test clock during protocol calls. |
+| `npm run test:e2e` (final preview) | **12/12 passed**, 32.0 s, after stall-fixture fix. |
+| `npm run test:e2e:compat` (final preview) | **6/6 passed**, 9.6 s. |
+| `git diff --check`, frozen-file and boundary inspection | Pass. No changes to frozen spec/dependencies; no browser APIs in pure game modules or test-driver markers in production. Git used only for inspection. |
+
+### Records, UI and acceptance evidence
+
+The controller synchronously passes each fixed tick's event list to a session-owned `PersonalRecords` adapter. Only a finite positive completed **player** lap improves the record, stored as version 1 JSON in milliseconds with fractional precision. Tests cover missing data, malformed JSON, wrong schema versions/types, zero/negative/infinite/oversized durations, slower/equal laps, AI laps, storage acquisition/read/write exceptions, and an already faster record from another tab. A real simulation integration test proves no write before lap completion, a saved record during racing, fresh-race retention, and no credit for physically discontinuous progress. No simulation/AI/handling/timing rule changes were needed.
+
+The complete browser race now stops at lap 2 to compare the saved first lap against the reference while results remain hidden, continues to correct frozen three-lap results, replays to fresh race clocks/best while retaining the personal record, then reloads to the same menu value. A separate actual slower-lap run preserves a prior **0:20.000** record while showing its own distinct race best. Denied writes retain the actual completed lap as the session personal best and show **Saving unavailable**; pause/resume continues without page errors. Denied storage getters, corrupt/version/value data and empty first launch do not block play. Ordinary-origin persistence passes on final production preview as well as dev.
+
+Main menu explains every specified key/alias including Enter; focused Start/Resume/Replay have clear outlines. Positions use ordinal strings and clocks retain the established truncation to milliseconds. HUD/results say **RACE BEST**, menu/results/external strip say **PERSONAL BEST**, and personal rows are hidden when no record exists. Record/status UI initializes synchronously without waiting for animation. Actual menu/HUD/pause/results captures were manually inspected at all three desktop sizes; countdown at 1920×1080 and native countdown reviewed. No panel clipping/overlap was found; essential driving view remains clear. Screenshots are reproducible ignored artifacts under `test-results/`, not production assets.
+
+Native Chrome: reviewed menu instructions/focus, Enter start, 3 countdown, P pause, Enter resume, brief throttle/steer/brake with authoritative HUD and visible pause; repeated menu/Enter/countdown/P against final static preview. M4's native full-race evidence remains intact; M5's expensive complete race/persistence/reload uses ordinary inputs from the test-only keyboard wrapper. Multi-key behavior is separately covered by genuine Playwright keys. No audio, final art or release-performance acceptance is claimed here.
+
+### Resolved failures and remaining limits
+
+An initial targeted browser run passed four storage/UI cases but failed reload text because a frozen animation clock prevented the first UI update. The controller now initializes fields on phase changes; full suites pass. The first preview suite then passed 11/12 but the existing stall test observed **0 m → 1 m** between protocol calls while its installed clock still ran. Freezing the test clock before activation fixes the observation race; **three repeats** and final **12/12 preview** pass. This required no simulation change. Existing NO_COLOR/FORCE_COLOR warnings are benign. Runtime console/local-only request checks pass.
+
+No M5 blocker remains. Browser policy/site-data deletion can prevent retention; the explicit session fallback is tested. Re-reading before comparisons is not an atomic multi-tab locking guarantee. M6 audio/final art and M7 release/performance remain pending, as do any later full-release Safari/manual checks. Earlier development-only audit findings are unchanged/unretested. Stop after M5 and leave changes for user review/commit.
+
 ## M4 — 2026-10-31
 
 **Status: complete.** M3 prerequisite evidence was read before implementation; M1–M2 are also complete. Only M4 was implemented. M5–M7 remain pending. Initial worktree was clean; no commits/staging/push or other version-control mutations occurred. `SPEC.md`, package pins and lockfile are unchanged.
