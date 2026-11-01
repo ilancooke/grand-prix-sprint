@@ -183,6 +183,8 @@ Implementation uses one milestone per session. `PROGRESS.md` is the completion l
 
 This checklist follows every section of the frozen `SPEC.md`. M1–M6 provide implementation and local verification; M7 verifies the integrated release for every row. Grouped rows explicitly list all requirements in that group.
 
+The [M7 reconciliation in VERIFICATION.md](VERIFICATION.md#specification-reconciliation) now records evidence/disposition for every one of the 67 rows below, including all ten Definition of Done actions. Final manual race and representative desktop performance evidence remain required; the ledger retains M7 `in progress` until those pass.
+
 | Spec reference | Requirement coverage | Implementation / primary verification |
 | --- | --- | --- |
 | §1 | Original single-player Formula-style arcade game; responsive controls; retro pseudo-3D; opponents; complete three-lap experience; polished compact title | M1 driving/presentation; M3 opponents; M4 race; M5–M6 polish |

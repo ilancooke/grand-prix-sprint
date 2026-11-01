@@ -33,7 +33,7 @@
 
 ## Build and test commands
 
-M1–M6 are complete: use Node.js 24 LTS and npm 11; tested Node 24.18.0 / npm 11.16.0 on macOS ARM64. Exact dependency versions are pinned; `.nvmrc` records Node. M6 typecheck/lint, 134 logic tests, build, final 16 Chromium and 9 compatibility checks on static preview pass; earlier dev suites also pass. User confirmed the required listening review. Circuit/all-corner and three-size UI captures reviewed. Audio uses one gesture-created graph, mute/pause/replay cleanup and safe startup fallback; a multi-tick finish emits one fanfare. Prior deterministic render-rate, traffic, legality and persistence evidence remains intact. Dependencies unchanged; M1 audit reported 11 moderate development-only minimatch findings and zero production findings, not rerun in M2–M6. See `VERIFICATION.md`. The next authorized session selects M7; do not start it during M6 closeout.
+M1–M6 are complete; M7 is in progress. Use Node.js 24 LTS and npm 11; macOS ARM64 tested 24.18.0 / 11.16.0, Linux x64 clean setup tested 24.22.2 / 11.19.1. Exact dependency versions are pinned; `.nvmrc` records the original Node version. Existing 134 logic tests retain deterministic render-rate, traffic, legality and persistence coverage. M6 listening and circuit/three-size visual review pass. M7 adds twelve interruption/resize cycles, three whole-race replays with listener/audio lifetime checks, and an opt-in real-time profiler. Final uninterrupted manual release/recovery/replay/reload review and representative physical desktop performance evidence are pending: the user cannot review now and requested they remain pending. Resume only M7; do not mark it complete using headless VM measurements. All 67 specification mapping rows and ten Definition of Done actions are reconciled in `VERIFICATION.md`, alongside exact final command results. Dependency versions/lockfile are unchanged; M7 audit again reports 11 moderate development-only minimatch findings and zero production findings.
 
 | Command | Intended use |
 | --- | --- |
@@ -50,6 +50,9 @@ M1–M6 are complete: use Node.js 24 LTS and npm 11; tested Node 24.18.0 / npm 1
 | `npm run test:e2e` | Run the primary Chromium browser suite using Playwright-managed local server startup. |
 | `npx playwright install firefox webkit` | Additional browser setup for compatibility verification. |
 | `npm run test:e2e:compat` | Run designated Chromium/Firefox/WebKit compatibility smoke tests. |
+| `npx playwright install-deps chromium firefox webkit` | Install browser system libraries on Linux when needed. |
+| `npm run profile` | With static preview already running, profile one manually driven race in visible Chromium; writes ignored `test-results/performance.json`. |
+| `npm run profile -- --headless --auto` | Supplemental real-time full-throttle workload; cannot establish representative physical desktop acceptance. |
 
 Host/port settings live only in `config/server.ts`; the documented development/test/preview origin is `http://127.0.0.1:5173`. Keep that origin for future persistent-record checks. Browser downloads are development setup; the game runtime remains self-contained apart from its local static server. Full browser compatibility verification is deferred to its planned milestones; configured scripts alone are not evidence of passing checks.
 

@@ -2,7 +2,7 @@
 
 ## Status and source of truth
 
-This document preserves the architecture plan and its assumptions. M1–M3 established pinned local tooling, the final circuit, meaningful handling, recoverable contacts and exactly three deterministic opponents. M4 adds the functional three-lap race, grid/countdown, legal clocks/standings, results and replay. M5 completes the readable UI and validated personal-record persistence. M6 adds finished procedural presentation and synthesized racing audio; current verification status is in the ledger. Acceptance evidence is recorded in `VERIFICATION.md`. `PROGRESS.md` is the authoritative completion ledger. Release verification remains M7.
+This document preserves the architecture plan and its assumptions. M1–M3 established pinned local tooling, the final circuit, meaningful handling, recoverable contacts and exactly three deterministic opponents. M4 adds the functional three-lap race, grid/countdown, legal clocks/standings, results and replay. M5 completes the readable UI and validated personal-record persistence. M6 adds finished procedural presentation and synthesized racing audio. M7 release verification is in progress; final manual and representative desktop performance evidence remains pending. Acceptance evidence is recorded in `VERIFICATION.md`. `PROGRESS.md` is the authoritative completion ledger.
 
 `SPEC.md`, titled **Grand Prix Sprint — Game Specification**, version 1.0, is the authoritative, frozen specification. Do not edit or replace it.
 
@@ -156,6 +156,8 @@ Every implementation milestone adds tests for its new behavior and retains a run
 5. **Release/performance checks:** serve the production build locally with no external runtime requests. Record a named representative desktop, browser/version, viewport, and a full-race performance sample. Aim for approximately 60 rendered fps on a 60 Hz typical desktop, with a frame-time distribution and observations of recurring stalls; diagnose before optimizing. Verify simulation outcomes at 30/60/120/144 Hz render schedules, plus browser resizing and interruptions.
 
 Use constrained, named test fixtures rather than exposing simulation internals as permanent global debugging APIs. Avoid brittle pixel-perfect snapshots for all scenes; use deterministic projection assertions and a few reviewable scene captures. The final README must distinguish unit tests, browser setup, browser tests, and manual verification.
+
+M7 adds development-only repeated interruption and three-race replay checks, observing gameplay listener registration and actual Web Audio graph lifetime. `tests/performance/profile.ts` wraps real animation callbacks from outside the application and records active-race frame intervals, application callback durations, long tasks and interruptions. `npm run profile` lets a person drive visible Chromium; the optional headless full-throttle workload is supplemental VM evidence. Neither enters the production import graph. No gameplay architecture, timing, handling or product assumption changes. Requirement reconciliation covers all 67 roadmap mapping rows and explicitly leaves final manual/representative performance acceptance pending.
 
 ## Significant risks and mitigations
 

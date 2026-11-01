@@ -14,7 +14,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test:e2e": "playwright test --project=chromium",
-    "test:e2e:compat": "playwright test --grep @compat"
+    "test:e2e:compat": "playwright test --grep @compat",
+    "profile": "node tests/performance/profile.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

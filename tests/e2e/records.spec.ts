@@ -19,6 +19,9 @@ test('first launch, schema failures, focused Enter and responsive menu/pause @co
   await page.evaluate((key) => localStorage.setItem(key, '{"version":1,"bestLapMilliseconds":26122.803165}'), PERSONAL_BEST_KEY);
   await page.reload();
   await expect(page.locator('#menu-best')).toHaveText('0:26.122');
+  // Layout captures can take longer than the intentional stall threshold on
+  // a software-rendered VM. Advance only the explicit schedule from here.
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
   for (const viewport of [{ width: 960, height: 720 }, { width: 1280, height: 800 }, { width: 1920, height: 1080 }]) {
     await page.setViewportSize(viewport);
     const fits = await page.evaluate(() => {

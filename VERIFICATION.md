@@ -1,5 +1,144 @@
 # Verification evidence
 
+## M7 — 2026-11-01 (in progress)
+
+M1–M6 prerequisites are complete. Only M7 release verification is selected. The worktree was initially clean. No commits, staging, pushes, deployment or changes to the frozen specification, gameplay, art, audio, dependency versions or lockfile. New files are development-only release tests, listener observation and a real-time profiler; `package.json` adds only the profiler command.
+
+**Required evidence still pending:** The user answered **“I can’t review now; record it as pending”** for the final uninterrupted manual race/recovery/replay/reload and representative desktop performance review. M4's native complete race, M2/M3 driving/contact review, and M6's user-confirmed listening/visual evidence remain valid historical evidence; they do not replace M7's explicitly required final manual run. Safari is unavailable on this Linux host; record a Safari manual check when available (conditional, not an invented release requirement).
+
+### Environment and method
+
+Host: Ubuntu 24.04 x64 VM, **QEMU Virtual CPU version 2.5+**, four logical CPUs at reported 2.4 GHz, approximately **7.76 GiB RAM**. No host Node executable. Standard `node:24-bookworm-slim` container provides Debian 12 x64, **Node 24.22.2 / npm 11.19.1**, within the declared supported majors. Workspace is mounted at `/workspace`, commands run as UID 1000; browser library installation alone runs as root inside the disposable container. This is a virtual test machine, not a representative physical desktop. Origin remains **http://127.0.0.1:5173** inside that environment.
+
+For reproducibility, commands below are ordinary README commands executed with `docker exec gps-m7 …`; the container name is a session convenience, not a game dependency. `npm ci --cache /tmp/gps-npm-cache --no-fund` removed/replaced existing dependencies and installed **134 packages**, audited **135**, from the unchanged lockfile in **48 s**. Browser setup used `npx playwright install chromium firefox webkit` and `npx playwright install-deps chromium firefox webkit` (Linux libraries). Initial browser validation ran while library setup was still finishing and warned of missing GTK/X libraries; library installation subsequently completed. No package or application changes were needed.
+
+### Release checks
+
+Browser device presets initially use **1280×720** (Chromium/Firefox DPR 1, WebKit DPR 2); those project presets override the config's global viewport. The full keyboard-race capture explicitly selects **1280×800**, and UI/resize tests exercise **960×720**, **1280×800** and **1920×1080**. The separate profiler explicitly uses **1280×800 / DPR 1**. Pure logic retains exact complete-race equality at **30/60/120/144 Hz**, repeated ten-traversal AI traffic, braking reward, lawful gates, fractional finish ordering and safe persistence.
+
+| Exact command inside the supported container | Result |
+| --- | --- |
+| `node --version` / `npm --version` | **24.22.2 / 11.19.1**. |
+| `npm ci --cache /tmp/gps-npm-cache --no-fund` | Pass; clean replacement, 134 installed / 135 audited, lockfile unchanged. |
+| `npx playwright install chromium firefox webkit` | Pass; Playwright 1.64.1 engines Chromium **156.0.8078.4**, Firefox **157.0**, WebKit **27.2**. |
+| `npx playwright install-deps chromium firefox webkit` | Pass; standard Linux browser-library setup. |
+| `npm run typecheck` | Pass on all added TypeScript tests/profiler. |
+| `npm run lint` | Pass, including enforced pure-game boundary. |
+| `npm test` | **134/134**, 15 files, final run **6.29 s**. Exact deterministic timing/traffic/handling baselines retained. |
+| `npm run build` | Pass, **24 modules**, final **172 ms**. Static HTML **4.30 kB**, CSS **5.86 kB**, JS **35.60 kB**; identical asset hashes to the M6 implementation. |
+| `npm audit --json` | Exit **1**, **11 moderate** development-only findings from minimatch **GHSA-g3hv-75wg-m249**, unchanged from M1. No high/critical findings. No breaking automated fix applied. |
+| `npm audit --omit=dev` | Pass, **0 vulnerabilities**. No production npm dependencies. |
+| Specification-map comparison | **67/67** exact reference rows reconciled; no missing/extra row. All ten §12 actions explicitly covered. |
+| Frozen specification/lockfile and source/bundle audit | Unchanged; no runtime network clients, hosted assets, required-path placeholders or test-probe/driver markers in `src/` or `dist/`. `performance` in vehicle code is an explicit vehicle configuration argument, not a wall clock. |
+| `npm run test:e2e -- --workers=2 --output=test-results/m7-dev-final` | **18/18 passed**, **2.3 min**, Playwright-managed development server. Three-race replay test **1.6 min**; interruption stress **28.7 s**. |
+| `npm run test:e2e:compat -- --workers=1 --output=test-results/m7-dev-compat-serial` | **12/12 passed**, **3.2 min**, managed development server. Chromium, Firefox and WebKit driving/UI/audio plus twelve-cycle interruption stress. |
+| `npm run preview` | Static production build serves the unchanged documented origin. |
+| `npm run test:e2e -- --workers=2 --output=test-results/m7-preview` | **18/18 passed**, **2.2 min** against static preview. Three-race replay **1.5 min**, interruption stress **29.3 s**; exact results, records/reload, audio, local-only requests and console audit pass. |
+| `npm run test:e2e:compat -- --workers=1 --output=test-results/m7-preview-compat` | **12/12 passed**, **3.1 min** against static preview, Chromium/Firefox/WebKit. |
+| `npm run profile -- --headless --auto` | Pass: complete real-time three-lap workload, **4th / 4**, total **3:50.708**, best **1:03.128**, zero interruptions/errors/external requests. Conditions and distribution below. |
+| `git diff --check`, frozen-file and production-boundary checks | Pass. No Git mutations. |
+
+### Supplemental real-time VM performance
+
+Isolated static preview, Chromium **156.0.8078.4**, headless Linux x64 QEMU machine described above, **1280×800 / DPR 1**, default browser pacing, ordinary held throttle (no steering/braking assist). Finished at **2026-11-01 16:11:39 UTC**. No other test suite ran during measurement; no fake clock, CPU throttle, or production instrumentation. Raw samples and full machine/results metadata are in ignored `test-results/performance.json`, reproducible with the documented command.
+
+| Measurement | Samples | Mean | p50 | p95 | p99 | Maximum |
+| --- | --- | --- | --- | --- | --- | --- |
+| Active-racing rAF interval (ms) | 13,842 | 16.666 | 16.700 | 16.800 | 16.800 | 16.800 |
+| Whole application callback (ms) | 13,843 | 0.961 | 0.900 | 1.400 | 1.800 | 3.200 |
+
+Mean pacing **60.002 fps** across approximately **230.69 s** of recorded active-racing intervals. **Zero** intervals over 25/50/250 ms, **zero** observed long tasks and **zero** interruptions. The player reached real three-lap results with **3:50.708** authoritative total / **1:03.128** best; headless full throttle is deliberately slower than the controlled racing regression. No runtime/console errors or external HTTP requests. No recurring simulation/render stall appeared in this isolated workload, so no production optimization or handling/timing change was justified.
+
+This is useful headless VM callback/pacing evidence, **not representative physical desktop acceptance**. It does not measure physical frame presentation, input latency, human braking/recovery feel or listening. A named physical desktop, display refresh rate and uninterrupted manual run/report remain required. Default visible `npm run profile` mode is implemented/typechecked but not manually exercised on this display-less host. All automated release checks pass; **M7 remains in progress** solely for the documented manual/representative evidence. Preview and the disposable browser/audio container are stopped at handoff.
+
+**Resolved verification issues:** The first development suite passed the sixteen existing checks but failed the new stress timeout and replay fixture. The stress test now has a 90 s budget for VM rendering. Replay installs the fake clock before the keyboard animation wrapper, matching the existing complete-race fixture; otherwise the clock replaced that wrapper and left the player stationary. The listener observer now attributes registrations to application module/bundle stacks, excluding late Playwright/Vite blur listeners. An initially overlapping compatibility command lost its reused managed server when the primary command shut it down; all subsequent suites run sequentially.
+
+This container has no `/dev/snd`. Firefox's real context stayed suspended until a real PulseAudio service with a virtual null output was provided: standard development setup `apt-get install -y --no-install-recommends pulseaudio`, then as the browser user `pulseaudio --start --exit-idle-time=-1` and `pactl load-module module-null-sink sink_name=gps_test`. This is neither a mocked AudioContext nor a listening claim. A two-worker compatibility run also triggered WebKit's intentional >250 ms stall pause and disrupted a pause-toggle assertion during slow screenshots. Serial execution reduces contention; freezing the layout test's clock before activation/captures removes screenshot-latency effects while preserving the dedicated real-time launch and interruption checks. No runtime threshold or gameplay change was made. All twelve development compatibility checks then passed, including actual Firefox audio and WebKit focused controls/interruption stress.
+
+New release coverage:
+
+- Twelve cycles of pause, blur, hidden, exceptional 5 s stall and resize; another 5 s pause each cycle; immutable HUD clocks/station, no fraudulent lap/record, held-W clearing on resume, one audio context, five persistent graph nodes while suspended and stable gameplay listeners. Hidden state is explicitly simulated at the document handler; this is not a native-tab manual claim.
+- Three whole keyboard races in one page with real results/replay, exact authoritative total/race-best times, fresh grid/clocks, one audio context and unchanged gameplay listener count. Muting after each finish removes effects back to five persistent nodes. The observer counts application window/document keydown/keyup/blur/visibility listeners; it does not claim to count arbitrary browser-internal listeners.
+- `npm run profile`: opt-in visible Chromium, real wall time and user controls; active-racing rAF intervals, whole application callback duration, long tasks, interruptions and network/console audit. No fake clock or driver ships in production. `--headless --auto` uses only ordinary held throttle as a supplemental workload. Reports retain raw samples in ignored `test-results/performance.json`. Headless VM pacing cannot establish physical display presentation, input latency or representative desktop feel.
+
+### Specification reconciliation
+
+Every row of the frozen-spec mapping in `ROADMAP.md` is reconciled here. **Automated pass** below means the implemented requirement has executed logic/browser evidence, supplemented by the specified historical manual/visual/listening evidence. **Manual pending** identifies the remaining M7 acceptance, not a known gameplay failure. Source/test filenames are relative to the repository. Release command totals must also pass before closeout.
+
+| Spec reference | Evidence and release disposition |
+| --- | --- |
+| §1 | Complete keyboard race, `race.spec.ts`, three-race replay stress; original Canvas/AI/audio source and M6 visual/listening review. Final compact-title driving feel: **manual pending**. |
+| §2.1–2.3 | `track-projection.test.ts`, `render-loop.test.ts`; M2 full-loop and M6 seven circuit scenes confirm chase/depth/curves/motion. |
+| §2.4 | `render/art.ts`; M6 player wheels/body/rear-wing scene review. |
+| §2.5 | `smoke.spec.ts` distinct moving palette test, three explicit opponent palettes; M3/M6 silhouette review. |
+| §2.6 | `content/circuit.ts`, renderer; M2/M6 grass/curb/barrier/sign/stand review. |
+| §2.7 | `records.spec.ts` three-size menu/pause and `race.spec.ts` results captures; M5/M6 visual review. |
+| §2.8 | Asphalt-color steering test, both-verge recovery test, M6 surface/grass contrast review. |
+| §2.9 | Procedural Canvas art and Web Audio synthesis; provenance in `IMPLEMENTATION_NOTES.md`; no external media. |
+| §2 closing paragraph | Perspective projection tests and M6 chase-view review; browser Canvas 2D, no overhead mode. |
+| §3 opening | `track-projection.test.ts`, `handling.test.ts`; single periodic 2000 m Harbor Loop. |
+| §3.1–3.3 | Five eased left/right bends and multiple straights; `handling.test.ts` identical-steering braking comparison (340 vs 349 ticks, 0 vs 104 grass ticks). |
+| §3.4–3.5 | Seam render/lookup tests, visible checkered stripe (M6 scenes), repeated legal laps without navigation/loading. |
+| §3.6–3.7 | Circuit landmark/obstacle data; M2 full-loop and M6 all-corner/scenery/boundary review. |
+| §3 closing paragraph | Wide passing straights validated in `handling.test.ts`; bidirectional passing in `traffic.test.ts`, M3 native review. |
+| §4 table: accelerate/brake | `input.test.ts`, `vehicle.test.ts`, all-alias genuine browser-key smoke. |
+| §4 table: steering | `input.test.ts`, speed-sensitive motion, browser asphalt displacement for A/D/Left/Right. |
+| §4 table: pause | `race.test.ts`, countdown browser test, P/Escape and twelve-cycle stress. |
+| §4 table: confirm | Focused Start/Resume/Replay/Enter browser tests; mute focused Enter retains native action. |
+| §4 closing paragraphs | Held-key combined steering/throttle browser checks; integrated timing stress. Representative sustained responsiveness: **manual/performance pending**. |
+| §5.1–5.3 | `vehicle.test.ts`: gradual acceleration/cap, drag, brake priority, speed-sensitive steering. |
+| §5.4 and closing paragraphs | `handling.test.ts` braked Anchor faster/cleaner than full throttle, speed-squared load; M2 native corner review. Final manual feel pending. |
+| §5.5 | `handling.test.ts`, browser both-verge slowdown/rejoin. |
+| §5.6 | `collisions.test.ts`, `traffic.test.ts`, off-road full-race integration; M2 native obstacle/barrier recovery. |
+| §5.7 | Bounded entry losses, physical separation/seam/sweep/pileup tests; M2/M3 native contact review and M6 impact listening. |
+| §6 opening and closing | Exactly three explicit deterministic profiles, shared physics; `ai.test.ts`, `traffic.test.ts`. |
+| §6.1–6.2 | AI corner lookahead and acceleration tests, repeated ten traversals, actual valid AI-first race in `integration/race.test.ts`. |
+| §6.3–6.4 | Distinct profile caps/performance and both-direction overtaking/blocked-lane tests; M3 native field review. |
+| §6.5 | Two exact long traffic runs, ≥20 km/AI, bounded per-tick motion, zero world/car contacts or off-road ticks in that scenario; queue release/recovery fixtures. |
+| §6.6 | Lawful unwrapped standings and time-sorted finish tests, seam/invalid-progress fixtures. |
+| §7.1–7.3 | Four separate grid slots, exactly 180 immobile countdown ticks, three legal laps; unit/browser countdown. |
+| §7.4 | `raceHud` authority, exact lap/current/best/total/results browser comparison. |
+| §7.5 | Arming/ordered quarter gates, skipped/reverse/duplicate/nonfinite/discontinuous/adversarial fixtures; ordinary grass remains legal. |
+| §7.6 | Lawful progress snapshots, completed laps, ordered finishers, seam and same-tick fraction fixtures. |
+| §7.7–7.8 | Immediate frozen third-lap results, exact position/total/best browser assertions; no fourth lap. |
+| §7.9 | Three whole races without page reload, pristine grid/AI/contact/clock reset. |
+| §7.10 | Completed valid player-lap events saved before finish; complete-race/replay/reload and slower-record preservation browser checks. |
+| §8 Main menu | First-launch/schema/menu test: title, Start, all aliases, saved record only when present. |
+| §8 HUD | Actual speed/kmh, lap, ordinal position, current and race best from simulation; three-size review. |
+| §8 Results | Browser exact frozen position/total/race best, focused replay; three-size captures. |
+| §8 Pause | Visible overlay; exact pure counters/field freeze and browser HUD/focus/stall/resume stress. |
+| §9.1 | Speed→pitch/filter tests, actual AudioParam browser response; M6 user-confirmed listening. |
+| §9.2 | Countdown/GO event mapping, actual cue frequencies; M6 user-confirmed listening. |
+| §9.3 | Player-only impact events, coalescing and 18-tick cooldown; M6 actual-impact runs/user-confirmed listening. |
+| §9.4 | Exactly one fanfare in multi-tick finish; tone mapping and M6 user-confirmed listening. |
+| §9 closing paragraph | Gesture-only context creation, mute across phases, suspension/reuse, denial fallback, three-browser lifecycle tests. |
+| §10.1–10.4 | Supported clean Node/npm install; README dev/build/static preview; local-only request/console audit and no runtime packages/assets/services. |
+| §10.5 | Real-time diagnostic profiler provided. **Representative physical desktop distribution and responsiveness pending**; headless measurements are supplemental only. |
+| §10.6 | Exact complete-race snapshots/results at 30/60/120/144 Hz, fixed 60 Hz ticks and fractional crossings. |
+| §10.7 | Twelve-cycle interruption test, pure accumulator rebase and clock tests; native tab-switch review remains in final manual run. |
+| §10.8–10.9 | DOM-free `src/game/`, enforced lint import/global boundary, 134 logic tests plus browser integration. |
+| §10.10 | Source required-path audit has no TODO/FIXME/placeholder; automated menu→three laps→results→replay→reload. Final manual path pending. |
+| §11.1–11.2 | All source/config/lockfile present; clean reproducible static build. |
+| §11.3 | README commands, supported majors, fixed origin and every key/alias; clean install/dev/preview exercised. |
+| §11.4 | Documented type/lint/logic/primary/compatibility commands, release stress and opt-in profiler. |
+| §11.5 | Complete automated game flow and earlier native playthrough; final release manual/performance acceptance pending. |
+| §11.6 | `IMPLEMENTATION_NOTES.md`: architecture, provenance, storage/audio/browser boundaries and explicit remaining acceptance. |
+| §12.1 | Clean install and documented dev/static launch exercised; final manual README pass pending. |
+| §12.2 | Pointer Start and focused Enter browser pass; earlier native menu acceptance; final manual pending. |
+| §12.3 | Real simultaneous-key controls, projection and full-race tests, M2/M6 visual/driving evidence; final manual pending. |
+| §12.4 | Exactly three functional opponents, long traffic and complete AI-first/player-first races; final manual pending. |
+| §12.5 | Braking comparison, off-road/contact recovery/seam fixtures and genuine keyboard smoke; final manual pending. |
+| §12.6 | Three ordered-gate circuits in pure/browser flow, three repeated full races; final manual pending. |
+| §12.7 | Exact authoritative results and fractional ordering tests; final manual pending. |
+| §12.8 | Three whole-race replays with stable graph/listener counts; final manual pending. |
+| §12.9 | Actual valid record saved before finish/replay/reload in the same origin; final manual pending. |
+| §12.10 | Full documented static/logic/browser check results recorded in this section. |
+| §12 closing paragraph | No new gameplay feature, dependency, handling tuning, or scope expansion; verification and handoff only. |
+
+### Resume M7
+
+Complete the README manual release checklist and run `npm run profile` on a named representative desktop (record browser, viewport, refresh rate, distributions and feel). Record Safari manual results if available. Resolve any defects and rerun affected checks; mark M7 complete only when every acceptance criterion is verified. Do not invent M8 or claim all milestones complete while these required checks are pending.
+
 ## M6 — 2026-10-31
 
 **Status: complete.** Only M6 implemented; M7 untouched. macOS ARM64, Node 24.18.0/npm 11.16.0, existing Playwright browsers; unchanged local origin http://127.0.0.1:5173. No dependency setup/download/audit repeated.
